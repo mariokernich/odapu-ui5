@@ -1,0 +1,128 @@
+import FilterOperator from "sap/ui/model/FilterOperator";
+
+export type ServiceEntity = {
+	ServiceName: string;
+	ODataType: "2" | "4";
+	ServicePath: string;
+	Version: string;
+};
+
+export type ApcEntity = {
+	application_id: string;
+	version: string;
+	path: string;
+	class_name: string;
+	protocol_type_id: string;
+	amc_message_type_id: string;
+};
+
+export type MetadataEntity = {
+	name: string;
+	entityType: string;
+	properties: MetadataEntityProperty[];
+	keys: MetadataEntityProperty[];
+};
+
+export type MetadataFunction = {
+	name: string;
+	returnType: string;
+	entitySet: string;
+	parameters: MetadataEntityProperty[];
+	method: MetadataFunctionMethod;
+};
+
+export type MetadataAction = {
+	name: string;
+	isBound: boolean;
+	parameters: {
+		name: string;
+		type: string;
+		nullable: boolean;
+	}[];
+	returnType?: string;
+	entitySetPath?: string;
+};
+
+export type MetadataFunctionMethod = "GET" | "POST";
+
+export type MetadataEntityProperty = {
+	name: string;
+	type: string;
+	nullable: string;
+	maxLength: number;
+};
+
+export type RequestHeader = {
+	key: string;
+	value: string;
+};
+
+export type MainViewModel = {
+	resourceType: string;
+	selectedEntityName: string;
+	selectedFunctionName: string;
+	response: string;
+	selectedMethod: string;
+	selectedServiceFunctions: MetadataFunction[];
+	selectedServiceActions: MetadataAction[];
+	selectedEntityProperties: {
+		properties: MetadataEntityProperty[];
+		keyProperties: MetadataEntityProperty[];
+	};
+	entityCount: number;
+	functionCount: number;
+	actionCount: number;
+	top: number;
+	skip: number;
+	dark: boolean;
+	statusCode: number;
+	view: string;
+	folderTreeIcon: string;
+	dataViewMode: "json" | "table";
+};
+
+export type SelectedFunctionModel = {
+	name: string;
+	returnType: string;
+	entitySet: string;
+	parameters: MetadataEntityProperty[];
+	method: "GET" | "POST";
+};
+
+export type SelectedServiceModel = {
+	service: ServiceEntity | null;
+	entities: MetadataEntity[] | null;
+	actions: MetadataAction[] | null;
+};
+
+export type RequestHistory = {
+	method: string;
+	entity: string;
+	timestamp: string;
+	statusCode: number;
+	response: string;
+};
+
+export type FilterRecord = {
+	property: string;
+	operator: FilterOperator;
+	value: string;
+};
+
+export type Project = {
+	ProjectName: string;
+	Odatatype: string;
+	ServiceName: string;
+	ServicePath: string;
+	ServiceVersion: string;
+	EntityMethod?: string;
+	EntityName?: string;
+	FunctionName?: string;
+	ActionName?: string;
+	RequestType?: string;
+	Top?: number;
+	Skip?: number;
+	Headers: string;
+	Filters: string;
+	Sorters: string;
+}

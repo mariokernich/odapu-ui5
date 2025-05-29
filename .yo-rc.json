@@ -1,0 +1,21 @@
+{
+  "generator-ui5-ts-app": {
+    "namespace": "de.kernich.odpu",
+    "framework": "SAPUI5",
+    "frameworkVersion": "1.108.0",
+    "author": "Mario Kernich",
+    "initrepo": true,
+    "tstypes": "@sapui5/ts-types-esm",
+    "tstypesVersion": "1.108.0",
+    "appId": "de.kernich.odpu",
+    "appURI": "de/kernich/odpu",
+    "cdnDomain": "ui5.sap.com",
+    "defaultTheme": "sap_horizon",
+    "gte1_98_0": true,
+    "gte1_104_0": true,
+    "gte1_115_0": false,
+    "gte1_120_0": false,
+    "lt1_124_0": true,
+    "setupCompleted": true
+  }
+}

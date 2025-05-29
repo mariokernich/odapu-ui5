@@ -1,0 +1,33 @@
+specVersion: "2.5"
+metadata:
+  name: "de.kernich.odpu"
+type: library
+framework:
+  name: SAPUI5
+  version: 1.90.6
+  libraries:
+    - name: sap.ui.core
+    - name: sap.ui.layout
+    - name: sap.m
+    - name: themelib_sap_belize
+    - name: themelib_sap_fiori_3
+builder:
+  customTasks:
+    - name: ui5-task-flatten-library
+      afterTask: generateResourcesJson
+    - name: deploy-to-abap
+      afterTask: uglify
+      configuration:
+        log: 3
+        target:
+          url: http://vhcala4hci:50000
+          client: 001
+          auth: basic
+        credentials:
+          username: env:SAP_USER
+          password: env:SAP_PASSWORD
+        app:
+          name: ZODPU_UI5
+          description: "UI5_ODPU"
+          package: ZODPU
+          transport: A4HK900098

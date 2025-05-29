@@ -1,0 +1,1064 @@
+import Column from "sap/m/Column";
+import Dialog from "sap/m/Dialog";
+import Label from "sap/m/Label";
+import {
+	ApcEntity,
+	FilterRecord,
+	MetadataEntityProperty,
+	Project,
+	ServiceEntity,
+} from "../Types";
+import ManagedObject from "sap/ui/base/ManagedObject";
+import JSONModel from "sap/ui/model/json/JSONModel";
+import Table from "sap/m/Table";
+import ColumnListItem from "sap/m/ColumnListItem";
+import Button from "sap/m/Button";
+import MessageToast from "sap/m/MessageToast";
+import Text from "sap/m/Text";
+import ListBinding from "sap/ui/model/ListBinding";
+import SearchField from "sap/m/SearchField";
+import Item from "sap/ui/core/Item";
+import ToolbarSpacer from "sap/m/ToolbarSpacer";
+import Toolbar from "sap/m/Toolbar";
+import FilterOperator from "sap/ui/model/FilterOperator";
+import Filter from "sap/ui/model/Filter";
+import Select from "sap/m/Select";
+import VBox from "sap/m/VBox";
+import Input from "sap/m/Input";
+import GenericTile from "sap/m/GenericTile";
+import CSSGrid from "sap/ui/layout/cssgrid/CSSGrid";
+import SegmentedButtonItem from "sap/m/SegmentedButtonItem";
+import SegmentedButton from "sap/m/SegmentedButton";
+import Control from "sap/ui/core/Control";
+import Util from "./Util";
+import CodeEditor from "sap/ui/codeeditor/CodeEditor";
+import Icon from "sap/ui/core/Icon";
+import TileContent from "sap/m/TileContent";
+import HBox from "sap/m/HBox";
+import MessageBox from "sap/m/MessageBox";
+import { Button$PressEvent } from "sap/m/Button";
+import Component from "sap/ui/core/Component";
+import ODataRequests from "./ODataRequests";
+import ODataModel from "sap/ui/model/odata/v2/ODataModel";
+
+/**
+ * @namespace de.kernich.odpu.util
+ */
+export default class DialogManager extends ManagedObject {
+	private component: Component;
+	private requests: ODataRequests;
+
+	constructor(component: Component) {
+		super();
+		this.component = component;
+		this.requests = new ODataRequests(component.getModel() as ODataModel);
+	}
+
+	public async pickApc(apc: ApcEntity[]): Promise<ApcEntity> {
+		const dialog = new Dialog({
+			title: `Select Push Channel (${apc.length})`,
+			contentWidth: "80%",
+			contentHeight: "80%",
+		});
+
+		dialog.setModel(new JSONModel(apc), "apc");
+
+		const updateDialogTitle = () => {
+			const binding = table.getBinding("items") as ListBinding;
+			const filteredLength = binding ? binding.getLength() : 0;
+			dialog.setTitle(`Select Push Channel (${filteredLength})`);
+		};
+
+		const searchInput = new SearchField({
+			placeholder: "Search Push Channels",
+			liveChange: (event) => {
+				const query = event.getParameter("newValue").toLowerCase();
+				const binding = table.getBinding("items") as ListBinding;
+				binding.filter(
+					query
+						? new Filter({
+								filters: [
+									new Filter("application_id", FilterOperator.Contains, query),
+									new Filter("path", FilterOperator.Contains, query),
+								],
+								and: false,
+						  })
+						: []
+				);
+				updateDialogTitle();
+			},
+		});
+
+		const toolbar = new Toolbar({
+			content: [searchInput, new ToolbarSpacer()],
+		});
+
+		dialog.addContent(toolbar);
+
+		const table = new Table({
+			columns: [
+				new Column({ header: new Label({ text: "application_id" }) }),
+				new Column({ header: new Label({ text: "path" }) }),
+				new Column({
+					header: new Label({ text: "protocol_type_id" }),
+				}),
+				new Column({
+					header: new Label({ text: "amc_message_type_id" }),
+				}),
+			],
+			growing: true,
+			growingThreshold: 100,
+		});
+
+		table.setMode("SingleSelectMaster");
+
+		table.bindItems({
+			path: "apc>/",
+			template: new ColumnListItem({
+				cells: [
+					new Text({ text: "{apc>application_id}" }),
+					new Text({ text: "{apc>path}" }),
+					new Text({ text: "{apc>protocol_type_id}" }),
+					new Text({ text: "{apc>amc_message_type_id}" }),
+				],
+			}),
+		});
+
+		dialog.addContent(table);
+
+		return new Promise((resolve, reject) => {
+			dialog.addButton(
+				new Button({
+					text: "Choose",
+					press: () => {
+						const selectedItem = table.getSelectedItem();
+
+						if (!selectedItem) {
+							MessageToast.show("Please select a push channel.");
+							return;
+						}
+
+						const bindingContext = selectedItem.getBindingContext("apc");
+						const apc = bindingContext.getObject() as ApcEntity;
+						resolve(apc);
+						dialog.close();
+						dialog.destroy();
+					},
+					type: "Emphasized",
+					icon: "sap-icon://accept",
+				})
+			);
+			dialog.addButton(
+				new Button({
+					text: "Cancel",
+					press: () => {
+						reject(new Error("Dialog closed"));
+						dialog.close();
+						dialog.destroy();
+					},
+					type: "Ghost",
+					icon: "sap-icon://decline",
+				})
+			);
+
+			dialog.open();
+		});
+	}
+
+	public async pickService(services: ServiceEntity[]): Promise<ServiceEntity> {
+		const dialog = new Dialog({
+			title: `Select Service (${services.length})`,
+			contentWidth: "80%",
+			contentHeight: "80%",
+		});
+
+		const updateDialogTitle = () => {
+			const binding = table.getBinding("items") as ListBinding;
+			const filteredLength = binding ? binding.getLength() : 0;
+			dialog.setTitle(`Select Service (${filteredLength})`);
+		};
+
+		const table = new Table({
+			growingThreshold: 9999,
+			columns: [
+				new Column({ header: new Label({ text: "Service Name / Group ID" }) }),
+				new Column({ header: new Label({ text: "Service Path" }) }),
+				new Column({ header: new Label({ text: "Description" }) }),
+				new Column({
+					header: new Label({ text: "OData Type" }),
+					width: "100px",
+				}),
+				new Column({
+					header: new Label({ text: "Version" }),
+					width: "100px",
+				}),
+			],
+			growing: true,
+		});
+
+		//table.setSticky(["ColumnHeaders"]);
+
+		table.setMode("SingleSelectMaster");
+
+		table.bindItems({
+			path: "services>/",
+			template: new ColumnListItem({
+				cells: [
+					new Text({ text: "{services>ServiceName}{services>GroupId}" }),
+					new Text({ text: "{services>ServicePath}" }),
+					new Text({ text: "{services>Description}" }),
+					new Text({ text: "{services>ODataType}" }),
+					new Text({ text: "{services>Version}" }),
+				],
+			}),
+		});
+
+		let searchQuery = "";
+		let selectedODataType = "ALL";
+
+		const applyFilters = () => {
+			const binding = table.getBinding("items") as ListBinding;
+			const filters: Filter[] = [];
+
+			// Add search filter if query exists
+			if (searchQuery) {
+				filters.push(new Filter({
+					filters: [
+						new Filter("ServiceName", FilterOperator.Contains, searchQuery),
+						new Filter("ServicePath", FilterOperator.Contains, searchQuery)
+					],
+				}));
+			}
+
+			// Add OData type filter if not ALL
+			if (selectedODataType !== "ALL") {
+				filters.push(new Filter("ODataType", FilterOperator.EQ, selectedODataType));
+			}
+
+			// Apply combined filters
+			binding.filter(filters.length > 0 ? new Filter({ filters: filters, and: true }) : []);
+			updateDialogTitle();
+		};
+
+		const searchInput = new SearchField({
+			placeholder: "Search Services",
+			liveChange: (event) => {
+				searchQuery = event.getParameter("newValue").toLowerCase();
+				applyFilters();
+			},
+		});
+
+		const dropdown = new Select({
+			items: [
+				new Item({ key: "ALL", text: "All" }),
+				new Item({ key: "2", text: "2" }),
+				new Item({ key: "4", text: "4" }),
+			],
+			change: (event) => {
+				selectedODataType = event.getParameter("selectedItem").getKey();
+				applyFilters();
+			},
+		});
+
+		const toolbar = new Toolbar({
+			content: [
+				searchInput,
+				new ToolbarSpacer(),
+				dropdown,
+				new ToolbarSpacer(),
+			],
+		}).addStyleClass("sapUiResponsivePadding");
+
+		dialog.addContent(toolbar);
+		dialog.addContent(table);
+		//table.setInfoToolbar(toolbar);
+		dialog.setModel(new JSONModel(services), "services");
+
+		return new Promise((resolve, reject) => {
+			dialog.addButton(
+				new Button({
+					text: "Choose",
+					press: () => {
+						const selectedItem = table.getSelectedItem();
+
+						if (!selectedItem) {
+							MessageToast.show("Please select a service.");
+							return;
+						}
+
+						const bindingContext = selectedItem.getBindingContext("services");
+						const service = bindingContext.getObject() as ServiceEntity;
+						resolve(service);
+						dialog.close();
+						dialog.destroy();
+					},
+					type: "Emphasized",
+					icon: "sap-icon://accept",
+				})
+			);
+			dialog.addButton(
+				new Button({
+					text: "Cancel",
+					press: () => {
+						reject(new Error("Dialog closed"));
+						dialog.close();
+						dialog.destroy();
+					},
+					type: "Ghost",
+					icon: "sap-icon://decline",
+				})
+			);
+
+			dialog.open();
+		});
+	}
+
+	public async showAddHeaderDialog(): Promise<{
+		key: string;
+		value: string;
+	}> {
+		return new Promise((resolve, reject) => {
+			const predefinedHeaders = [
+				{ key: "sap-client", value: "100" },
+				{ key: "sap-language", value: "EN" },
+				{ key: "accept", value: "application/json" },
+				{ key: "content-type", value: "application/json" },
+				{ key: "x-csrf-token", value: "fetch" }
+			];
+
+			const submit = () => {
+				const key = keyInput ? keyInput.getValue() : keySelect.getSelectedKey();
+				const value = valueInput.getValue();
+
+				if (!key) {
+					MessageToast.show("Please enter a key.");
+					return;
+				}
+
+				if (!value) {
+					MessageToast.show("Please enter a value.");
+					return;
+				}
+
+				dialog.close();
+				dialog.destroy();
+				resolve({ key: key, value: value });
+			};
+
+			let keyInput: Input;
+			let keySelect: Select;
+			const valueInput = new Input({
+				placeholder: "Enter value",
+				submit: submit,
+			});
+			let currentKeyControl: Control;
+
+			const updateKeyControl = (isCustom: boolean) => {
+				if (currentKeyControl) {
+					keyContainer.removeItem(currentKeyControl);
+				}
+
+				if (isCustom) {
+					keyInput = new Input({
+						placeholder: "Enter key",
+						submit: submit,
+					});
+					currentKeyControl = keyInput;
+				} else {
+					keySelect = new Select({
+						items: predefinedHeaders.map(header => 
+							new Item({ key: header.key, text: header.key })
+						),
+						change: (event) => {
+							const selectedKey = event.getParameter("selectedItem").getKey();
+							const selectedHeader = predefinedHeaders.find(h => h.key === selectedKey);
+							if (selectedHeader) {
+								valueInput.setValue(selectedHeader.value);
+							}
+						},
+						width:"100%"
+					});
+					currentKeyControl = keySelect;
+				}
+
+				keyContainer.addItem(currentKeyControl);
+			};
+
+			
+
+			const keyContainer = new VBox({
+				items: []
+			});
+
+			const dialog = new Dialog({
+				title: "Add Header",
+				contentWidth: "400px",
+				draggable: true,
+				content: [
+					new VBox({
+						items: [
+							new SegmentedButton({
+								items: [
+									new SegmentedButtonItem({ text: "Custom Header" }),
+									new SegmentedButtonItem({ text: "Pre defined" }),
+								],
+								selectionChange: (event) => {
+									const selectedItem = event.getParameter("item");
+									const isCustom = selectedItem.getText() === "Custom Header";
+									updateKeyControl(isCustom);
+								},
+								width: "100%",
+							}).addStyleClass("sapUiSmallMarginBottom"),
+							new Label({ text: "Key" }),
+							keyContainer.addStyleClass("sapUiSmallMarginBottom"),
+							new Label({ text: "Value" }),
+							valueInput,
+						],
+					}).addStyleClass("sapUiSmallMargin"),
+				],
+			});
+
+			// Initialize with custom header
+			updateKeyControl(true);
+
+			dialog.setBeginButton(
+				new Button({
+					text: "Save",
+					press: submit,
+					type: "Emphasized",
+					icon: "sap-icon://accept",
+				})
+			);
+			dialog.setEndButton(
+				new Button({
+					text: "Cancel",
+					press: () => {
+						dialog.close();
+						dialog.destroy();
+						reject(new Error("Dialog closed"));
+					},
+					type: "Ghost",
+					icon: "sap-icon://decline",
+				})
+			);
+			dialog.setInitialFocus(keyInput);
+			dialog.open();
+			keyInput.focus();
+		});
+	}
+
+	public async addFilter(
+		properties: MetadataEntityProperty[]
+	): Promise<FilterRecord> {
+		return new Promise((resolve, reject) => {
+			const submit = () => {
+				dialog.close();
+				dialog.destroy();
+				resolve({
+					property: propertySelect.getSelectedKey(),
+					operator: operatorSelect.getSelectedKey() as FilterOperator,
+					value: input.getValue(),
+				});
+			};
+
+			const propertySelect = new Select({
+				items: properties.filter(x => x.name.toLowerCase() !== "delete_mc" && x.name.toLowerCase() !== "update_mc" && x.name.toLowerCase() !== "create_mc").map((p) => new Item({ key: p.name, text: p.name })),
+				width: "100%",
+			});
+			const operatorSelect = new Select({
+				items: [
+					new Item({ key: FilterOperator.Contains, text: "Contains" }),
+					new Item({ key: FilterOperator.EQ, text: "Equal" }),
+					new Item({ key: FilterOperator.NE, text: "Not Equal" }),
+					new Item({ key: FilterOperator.GT, text: "Greater Than" }),
+					new Item({ key: FilterOperator.LT, text: "Less Than" }),
+					new Item({
+						key: FilterOperator.GE,
+						text: "Greater Than or Equal",
+					}),
+					new Item({
+						key: FilterOperator.LE,
+						text: "Less Than or Equal",
+					}),
+				],
+				width: "100%",
+			});
+			const input = new Input({
+				placeholder: "Enter value",
+				submit: submit,
+				width: "100%",
+			});
+
+			const dialog = new Dialog({
+				title: "Add Filter",
+				contentWidth: "400px",
+				draggable: true,
+				initialFocus: propertySelect,
+				content: [
+					new VBox({
+						items: [
+							new Label({ text: "Property" }),
+							propertySelect,
+							new Label({ text: "Operator" }),
+							operatorSelect,
+							new Label({ text: "Value" }),
+							input,
+						],
+					}).addStyleClass("sapUiSmallMargin"),
+				],
+			});
+			dialog.setBeginButton(
+				new Button({
+					text: "Save",
+					press: submit,
+					type: "Emphasized",
+					icon: "sap-icon://accept",
+				})
+			);
+			dialog.setEndButton(
+				new Button({
+					text: "Cancel",
+					press: () => {
+						dialog.close();
+						dialog.destroy();
+						reject(new Error("Dialog closed"));
+					},
+					type: "Ghost",
+					icon: "sap-icon://decline",
+				})
+			);
+			dialog.open();
+		});
+	}
+
+	public async editFilter(filter: FilterRecord, properties: MetadataEntityProperty[]): Promise<FilterRecord> {
+		return new Promise((resolve, reject) => {
+			const submit = () => {
+				dialog.close();
+				dialog.destroy();
+				resolve({
+					property: propertySelect.getSelectedKey(),
+					operator: operatorSelect.getSelectedKey() as FilterOperator,
+					value: input.getValue(),
+				});
+			};
+			
+			const propertySelect = new Select({
+				items: properties.filter(x => x.name.toLowerCase() !== "delete_mc" && x.name.toLowerCase() !== "update_mc" && x.name.toLowerCase() !== "create_mc").map((p) => new Item({ key: p.name, text: p.name })),
+				width: "100%",
+			});
+			const operatorSelect = new Select({
+				items: [
+					new Item({ key: FilterOperator.Contains, text: "Contains" }),
+					new Item({ key: FilterOperator.EQ, text: "Equal" }),
+					new Item({ key: FilterOperator.NE, text: "Not Equal" }),
+					new Item({ key: FilterOperator.GT, text: "Greater Than" }),
+					new Item({ key: FilterOperator.LT, text: "Less Than" }),
+				],
+				width: "100%",
+			});
+			
+			const input = new Input({
+				placeholder: "Enter value",
+				submit: submit,
+				width: "100%",
+			});
+			
+			input.setValue(filter.value);
+			propertySelect.setSelectedKey(filter.property);
+			operatorSelect.setSelectedKey(filter.operator);
+
+			const dialog = new Dialog({
+				title: "Edit Filter",
+				contentWidth: "400px",
+				draggable: true,
+				initialFocus: propertySelect,
+				content: [
+					new VBox({
+						items: [
+							new Label({ text: "Property" }),
+							propertySelect,
+							new Label({ text: "Operator" }),
+							operatorSelect,
+							new Label({ text: "Value" }),
+							input,
+						],
+					}).addStyleClass("sapUiSmallMargin"),
+				],
+			});
+			dialog.setBeginButton(
+				new Button({
+					text: "Save",
+					press: submit,
+					type: "Emphasized",
+					icon: "sap-icon://accept",
+				})
+			);
+			dialog.setEndButton(
+				new Button({
+					text: "Cancel",
+					press: () => {
+						dialog.close();
+						dialog.destroy();
+						reject(new Error("Dialog closed"));
+					},
+					type: "Ghost",
+					icon: "sap-icon://decline",
+				})
+			);
+			dialog.open();
+			
+		});
+	}
+
+	public static async showConfirmationDialog(
+		message: string
+	): Promise<boolean> {
+		return new Promise((resolve) => {
+			const dialog = new Dialog({
+				title: "Confirm",
+				content: new Text({ text: message }).addStyleClass("sapUiSmallMargin"),
+			});
+			dialog.setBeginButton(
+				new Button({
+					text: "Yes",
+					press: () => {
+						dialog.close();
+						dialog.destroy();
+						resolve(true);
+					},
+					type: "Emphasized",
+					icon: "sap-icon://accept",
+				})
+			);
+			dialog.setEndButton(
+				new Button({
+					text: "No",
+					press: () => {
+						dialog.close();
+						dialog.destroy();
+						resolve(false);
+					},
+					type: "Ghost",
+					icon: "sap-icon://decline",
+				})
+			);
+			dialog.setEscapeHandler(() => {
+				dialog.close();
+				dialog.destroy();
+				resolve(false);
+			});
+			dialog.open();
+		});
+	}
+
+	public static async selectProjectType() {
+		return new Promise<"ODATA" | "APC">((resolve) => {
+			const dialog = new Dialog({
+				title: "Choose type",
+			});
+			const grid = new CSSGrid();
+
+			grid.addItem(
+				new GenericTile({
+					header: "OData",
+					subheader: "RAP Service, SEGW Project",
+					frameType: "OneByOne",
+					tileContent: [
+						new TileContent({
+							content:new VBox({
+								items: [
+									new Icon({
+										src: "sap-icon://add-activity",
+										size: "2rem",
+									})
+									/*
+									new Image({
+										src: sap.ui.require.toUrl("de/kernich/odpu/img/odata.png"),
+										width: "50px"
+									})*/
+								]
+							})
+						}),
+					],
+					press: () => {
+						resolve("ODATA");
+						dialog.close();
+						dialog.destroy();
+					},
+				})
+			);
+			grid.addItem(
+				new GenericTile({
+					header: "APC",
+					subheader: "ABAP Push Channel",
+					frameType: "OneByOne",
+					tileContent: [
+						new TileContent({
+							content:new VBox({
+								items: [
+									new Icon({
+										src: "sap-icon://add-activity",
+										size: "2rem",
+									}),
+								]
+							})
+						}),
+					],
+					press: () => {
+						resolve("APC");
+						dialog.close();
+						dialog.destroy();
+					},
+				})
+			);
+
+			grid.setGridTemplateColumns("1fr 1fr");
+			grid.setGridGap("20px");
+
+			dialog.addContent(new VBox({
+				items: [new Text({ text: "Please select the type of project you want to create" }).addStyleClass("sapUiSmallMarginBottom"), grid],
+				width: "100%",
+				height: "100%",
+				fitContainer: true,
+			}));
+			dialog.addStyleClass("sapUiContentPadding");
+
+			dialog.addButton(
+				new Button({
+					text: "Cancel",
+					icon: "sap-icon://decline",
+					press: () => {
+						dialog.close();
+						dialog.destroy();
+					},
+				})
+			);
+			dialog.open();
+		});
+	}
+
+	public async addSort(
+		properties: MetadataEntityProperty[]
+	): Promise<{ property: string; direction: "asc" | "desc" }> {
+		return new Promise((resolve, reject) => {
+			const submit = () => {
+				dialog.close();
+				dialog.destroy();
+				resolve({
+					property: propertySelect.getSelectedKey(),
+					direction: directionSelect.getSelectedKey() as "asc" | "desc",
+				});
+			};
+
+			const propertySelect = new Select({
+				items: properties.filter(x => x.name.toLowerCase() !== "delete_mc" && x.name.toLowerCase() !== "update_mc" && x.name.toLowerCase() !== "create_mc").map((p) => new Item({ key: p.name, text: p.name })),
+				width: "100%",
+			});
+			const directionSelect = new Select({
+				items: [
+					new Item({ key: "asc", text: "Ascending" }),
+					new Item({ key: "desc", text: "Descending" }),
+				],
+				width: "100%",
+			});
+
+			const dialog = new Dialog({
+				title: "Add Sorter",
+				contentWidth: "400px",
+				draggable: true,
+				initialFocus: propertySelect,
+				content: [
+					new VBox({
+						items: [
+							new Label({ text: "Property" }),
+							propertySelect,
+							new Label({ text: "Direction" }),
+							directionSelect,
+						],
+					}).addStyleClass("sapUiSmallMargin"),
+				],
+			});
+			dialog.setBeginButton(
+				new Button({
+					text: "Save",
+					press: submit,
+					type: "Emphasized",
+					icon: "sap-icon://accept",
+				})
+			);
+			dialog.setEndButton(
+				new Button({
+					text: "Cancel",
+					press: () => {
+						dialog.close();
+						dialog.destroy();
+						reject(new Error("Dialog closed"));
+					},
+					type: "Ghost",
+					icon: "sap-icon://decline",
+				})
+			);
+			dialog.open();
+		});
+	}
+
+	public async showXmlCodeEditor(xml: string) {
+		return new Promise((resolve) => {
+			const formattedXml = xml ? Util.formatXml(xml) : "";
+			const dialog = new Dialog({
+				title: "Metadata",
+				contentHeight: "100%",
+				contentWidth: "100%",
+			});
+			const editor = new CodeEditor({
+				editable: false,
+				type: "xml",
+				value: formattedXml,
+				width: "100%",
+				height: "100%",
+				maxLines: 1000,
+				syntaxHints: false,
+			});
+			dialog.addContent(
+				new VBox({
+					items: [editor],
+					width: "100%",
+					height: "100%",
+					fitContainer: true,
+				})
+			);
+			dialog.addButton(
+				new Button({
+					text: "Copy",
+					icon: "sap-icon://copy",
+					press: () => {
+						void Util.copy2Clipboard(formattedXml);
+						MessageToast.show("Copied to clipboard");
+					},
+				})
+			);
+			dialog.addButton(
+				new Button({
+					text: "Close",
+					icon: "sap-icon://decline",
+					press: () => {
+						dialog.close();
+						dialog.destroy();
+						resolve(false);
+					},
+				})
+			);
+			dialog.open();
+		});
+	}
+
+	public async showProjectListDialog(): Promise<Project> {
+		const projects = await this.requests.getProjects();
+		return new Promise((resolve, reject) => {
+			const searchInput = new SearchField({
+				placeholder: "Search Projects",
+				liveChange: (event) => {
+					const query = event.getParameter("newValue").toLowerCase();
+					const binding = table.getBinding("items") as ListBinding;
+					binding.filter(
+						query
+							? new Filter("ProjectName", FilterOperator.Contains, query)
+							: []
+					);
+					updateDialogTitle();
+				},
+			});
+
+			const dialog = new Dialog({
+				title: `Saved Projects`,
+				contentWidth: "400px",
+				contentHeight: "600px",
+				busyIndicatorDelay: 0,
+				draggable: true,
+				initialFocus: searchInput
+			});
+
+			const updateDialogTitle = () => {
+				const binding = table.getBinding("items") as ListBinding;
+				const filteredLength = binding ? binding.getLength() : 0;
+				dialog.setTitle(`Saved Projects (${filteredLength})`);
+			};
+
+			
+			const toolbar = new Toolbar({
+				content: [searchInput, new ToolbarSpacer()],
+			});
+
+			dialog.addContent(toolbar);
+
+			const table = new Table({
+				columns: [
+					new Column({ header: new Label({ text: "Project Name" }) }),
+					new Column({ header: new Label({ text: "Actions" }), hAlign: "End" })
+				],
+				growing: true,
+				growingThreshold: 100,
+				noDataText: "No projects found",
+			});
+
+			table.setMode("SingleSelectMaster");
+
+			table.bindItems({
+				path: "projects>/",
+				template: new ColumnListItem({
+					cells: [
+						new Text({ text: "{projects>ProjectName}" }),
+						new HBox({
+							items: [
+								new Button({
+									icon: "sap-icon://delete",
+									type: "Reject",
+									press: (event: Button$PressEvent) => {
+										const source = event.getSource();
+										const listItem = source.getParent() as ColumnListItem;
+										const bindingContext = listItem.getBindingContext("projects");
+										if (!bindingContext) {
+											return;
+										}
+										const project = bindingContext.getObject() as Project;
+										
+										void DialogManager.showConfirmationDialog(
+											`Are you sure you want to delete project "${project.ProjectName}"?`
+										).then(async (confirmed) => {
+											if (confirmed) {
+												dialog.setBusy(true);
+												try {
+													await this.requests.deleteProject(project);
+													MessageToast.show("Project deleted successfully");
+													
+													// Remove from table
+													const model = dialog.getModel("projects") as JSONModel;
+													const projects = model.getProperty("/") as Project[];
+													const index = projects.findIndex(p => p.ProjectName === project.ProjectName);
+													if (index > -1) {
+														projects.splice(index, 1);
+														model.setProperty("/", projects);
+													}
+													updateDialogTitle();
+												} catch (error: unknown) {
+													const errorMessage = error instanceof Error ? error.message : String(error);
+													MessageBox.error(`Error deleting project: ${errorMessage}`);
+												} finally {
+													dialog.setBusy(false);
+												}
+											}
+										});
+									}
+								})
+							],
+							justifyContent: "End"
+						})
+					],
+				}),
+			});
+
+			dialog.addContent(table);
+			dialog.setModel(new JSONModel(projects), "projects");
+			updateDialogTitle();
+
+			dialog.addButton(
+				new Button({
+					text: "Load",
+					press: () => {
+						const selectedItem = table.getSelectedItem();
+						if (!selectedItem) {
+							MessageToast.show("Please select a project");
+							return;
+						}
+						const bindingContext = selectedItem.getBindingContext("projects");
+						if (!bindingContext) {
+							return;
+						}
+						const project = bindingContext.getObject() as Project;
+						resolve(project);
+						dialog.close();
+						dialog.destroy();
+					},
+					type: "Emphasized",
+					icon: "sap-icon://accept",
+				})
+			);
+
+			dialog.addButton(
+				new Button({
+					text: "Cancel",
+					press: () => {
+						reject(new Error("Dialog closed"));
+						dialog.close();
+						dialog.destroy();
+					},
+					type: "Ghost",
+					icon: "sap-icon://decline",
+				})
+			);
+
+			dialog.open();
+		});
+	}
+
+	public async showSaveProjectDialog(): Promise<string> {
+		return new Promise((resolve, reject) => {
+			const submit = () => {
+				const projectName = input.getValue();
+				if (!projectName) {
+					MessageToast.show("Please enter a project name");
+					return;
+				}
+				resolve(projectName);
+				dialog.close();
+				dialog.destroy();
+			}
+
+			const input = new Input({
+				placeholder: "Enter project name...",
+				width: "100%",
+				submit: submit,
+			});
+
+			const dialog = new Dialog({
+				title: "Save Project",
+				contentWidth: "400px",
+				content: [
+					new VBox({
+						items: [
+							new Label({ text: "Project Name" }),
+							input,
+						],
+					}).addStyleClass("sapUiSmallMargin"),
+				],
+				initialFocus: input,
+				draggable: true,
+			});
+
+			dialog.setBeginButton(
+				new Button({
+					text: "Save",
+					press: submit,
+					type: "Emphasized",
+					icon: "sap-icon://accept",
+				})
+			);
+
+			dialog.setEndButton(
+				new Button({
+					text: "Cancel",
+					press: () => {
+						reject(new Error("Dialog closed"));
+						dialog.close();
+						dialog.destroy();
+					},
+					type: "Ghost",
+					icon: "sap-icon://decline",
+				})
+			);
+
+			dialog.open();
+		});
+	}
+}

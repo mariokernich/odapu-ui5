@@ -1,0 +1,46 @@
+specVersion: "4.0"
+metadata:
+  name: de.kernich.odpu
+type: application
+framework:
+  name: SAPUI5
+  version: "1.108.42"
+  libraries:
+    - name: sap.m
+    - name: sap.f
+    - name: sap.ui.core
+    - name: themelib_sap_horizon
+builder:
+  customTasks:
+    - name: ui5-tooling-transpile-task
+      afterTask: replaceVersion
+server:
+  customMiddleware:
+    - name: ui5-middleware-serveframework
+      afterMiddleware: compression
+    - name: ui5-tooling-transpile-middleware
+      afterMiddleware: compression
+      configuration:
+        generateTsInterfaces: true
+    - name: ui5-middleware-livereload
+      afterMiddleware: compression
+    - name: ui5-middleware-simpleproxy
+      afterMiddleware: compression
+      mountPath: /sap/opu/
+      configuration:
+        baseUri: "https://a4h.kernich.de/sap/opu/"
+        strictSSL: false
+        query:
+          sap-client: '001'
+        excludePatterns:
+        - "/local/**"
+    - name: ui5-middleware-simpleproxy
+      afterMiddleware: compression
+      mountPath: /sap/bc/apc/
+      configuration:
+        baseUri: "https://a4h.kernich.de/sap/bc/apc/"
+        strictSSL: false
+        query:
+          sap-client: '001'
+        excludePatterns:
+        - "/local/**"
