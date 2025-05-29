@@ -16,7 +16,7 @@
             <OverflowToolbar>
                 <Image
                     src="{local>/odapuIcon}"
-                    width="50px"
+                    width="60px"
                 />
                 <Title
                     text="OData and Push Channel test tool"
