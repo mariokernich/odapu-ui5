@@ -2,7 +2,7 @@
 
 # OData & APC Test Tool
 
-This repository contains the UI5 Application de.kernich.odpu of the ODAPU project. 
+This repository contains the UI5 Application **de.kernich.odpu** of the ODAPU project. 
 
 Main repository: https://github.com/mariokernich/odapu-abap
 
