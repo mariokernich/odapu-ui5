@@ -18,6 +18,7 @@ export default class Main extends BaseController {
 		linkedinIcon: sap.ui.require.toUrl(
 			"de/kernich/odpu/img/linkedin-brands.svg"
 		),
+		odapuIcon: sap.ui.require.toUrl("de/kernich/odpu/img/odapu-logo.png"),
 	};
 
 	onTabContainerAddNewButtonPress() {
