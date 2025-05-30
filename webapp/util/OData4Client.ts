@@ -1,5 +1,5 @@
 import Filter from "sap/ui/model/Filter";
-import IODataClient, { ODataAction } from "./IODataClient";
+import IODataClient from "./IODataClient";
 import ODataModel from "sap/ui/model/odata/ODataModel";
 import ODataModelV4, {
 	ODataModel$DataReceivedEvent,
@@ -92,38 +92,47 @@ export default class OData4Client implements IODataClient {
 	destroy(): void {}
 
 	async createEntity(
-		entityName: string,
-		properties: Record<string, string | number | boolean>
+		options: {
+			entityName: string;
+			properties: Record<string, unknown>;
+			headers: Record<string, string>;
+		}
 	) {
-		const binding = this.model.bindList(`/${entityName}`, undefined, [], [], {
+		const binding = this.model.bindList(`/${options.entityName}`, undefined, [], [], {
 			$$getKeepAliveContext: true,
 		});
 
-		const createdContext = binding.create(properties);
+		const createdContext = binding.create(options.properties);
 
 		await createdContext.created();
 	}
 	deleteEntity(
-		entityName: string,
-		keys: Record<string, string | number | boolean>
+		options: {
+			entityName: string;
+			keys: Record<string, string | number | boolean>;
+			headers: Record<string, string>;
+		}
 	) {
-		const keyPath = Object.entries(keys)
+		const keyPath = Object.entries(options.keys)
 			.map(([key, value]) => `${key}='${value}'`)
 			.join(",");
 		const entityBinding = this.model.getKeepAliveContext(
-			`/${entityName}(${keyPath})`
+			`/${options.entityName}(${keyPath})`
 		);
 
 		return entityBinding.delete();
 	}
 	async getEntity(
-		entityName: string,
-		keys: Record<string, string | number | boolean>
+		options: {
+			entityName: string;
+			keys: Record<string, string | number | boolean>;
+			headers: Record<string, string>;
+		}
 	): Promise<object> {
-		const keyPath = Object.entries(keys)
+		const keyPath = Object.entries(options.keys)
 			.map(([key, value]) => `${key}='${value}'`)
 			.join(",");
-		const binding = this.model.bindContext(`/${entityName}(${keyPath})`);
+		const binding = this.model.bindContext(`/${options.entityName}(${keyPath})`);
 		const obj = (await binding.requestObject()) as object;
 		if (obj === undefined) {
 			throw new Error("Entity not found");

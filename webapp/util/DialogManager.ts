@@ -400,7 +400,7 @@ export default class DialogManager extends ManagedObject {
 							new Label({ text: "Key" }),
 							keyInput,
 							select,
-							new Label({ text: "Value" }),
+							new Label({ text: "Value" }).addStyleClass("sapUiSmallMarginTop"),
 							valueInput,
 						],
 					}).addStyleClass("sapUiSmallMargin"),
@@ -638,7 +638,7 @@ export default class DialogManager extends ManagedObject {
 	}
 
 	public static async selectProjectType() {
-		return new Promise<"ODATA" | "APC">((resolve) => {
+		return new Promise<"ODATA" | "APC">((resolve, reject) => {
 			const dialog = new Dialog({
 				title: "Choose type",
 			});
@@ -716,6 +716,7 @@ export default class DialogManager extends ManagedObject {
 					press: () => {
 						dialog.close();
 						dialog.destroy();
+						reject(new Error("Dialog closed"));
 					},
 				})
 			);

@@ -1,5 +1,5 @@
 import Filter from "sap/ui/model/Filter";
-import IODataClient, { ODataAction } from "./IODataClient";
+import IODataClient from "./IODataClient";
 import ODataModel from "sap/ui/model/odata/ODataModel";
 import ODataModelV2 from "sap/ui/model/odata/v2/ODataModel";
 import {
@@ -75,21 +75,29 @@ export default class OData2Client implements IODataClient {
 	destroy(): void {}
 
 	async createEntity(
-		entityName: string,
-		properties: Record<string, string | number | boolean>
+		options: {
+			entityName: string;
+			properties: Record<string, unknown>;
+			headers: Record<string, string>;
+		}
 	): Promise<void> {
+		this.model.setHeaders(options.headers);
 		await new Promise<void>((resolve, reject) => {
-			this.model.create(`/${entityName}`, properties, {
+			this.model.create(`/${options.entityName}`, options.properties, {
 				success: () => resolve(),
 				error: (error: Error) => reject(error),
 			});
 		});
 	}
 	async getEntity(
-		entityName: string,
-		keys: Record<string, string | number | boolean>
+		options: {
+			entityName: string;
+			keys: Record<string, string | number | boolean>;
+			headers: Record<string, string>;
+		}
 	): Promise<object> {
-		const path = this.model.createKey(`/${entityName}`, keys);
+		this.model.setHeaders(options.headers);
+		const path = this.model.createKey(`/${options.entityName}`, options.keys);
 		const context = await new Promise<Context>((resolve, reject) => {
 			this.model.createBindingContext(
 				path,
@@ -109,10 +117,14 @@ export default class OData2Client implements IODataClient {
 	}
 
 	async deleteEntity(
-		entityName: string,
-		keys: Record<string, string | number | boolean>
+		options: {
+			entityName: string;
+			keys: Record<string, string | number | boolean>;
+			headers: Record<string, string>;
+		}
 	): Promise<void> {
-		const path = this.model.createKey(`/${entityName}`, keys);
+		this.model.setHeaders(options.headers);
+		const path = this.model.createKey(`/${options.entityName}`, options.keys);
 		await new Promise<void>((resolve, reject) => {
 			this.model.remove(path, {
 				success: () => resolve(),
@@ -276,6 +288,6 @@ export default class OData2Client implements IODataClient {
 		parameters: Record<string, string | number | boolean>;
 		method: "GET" | "POST";
 	}): Promise<unknown> {
-		throw new Error("Not implemented");
+		throw new Error("Not implemented: " + JSON.stringify(options));
 	}
 }

@@ -14,15 +14,33 @@ export interface ReadEntityOptions {
 	skip: number;
 }
 
+export interface GetEntityOptions {
+	entityName: string;
+	keys: Record<string, string | number | boolean>;
+	headers: Record<string, string>;
+}
+
+export interface CreateEntityOptions {
+	entityName: string;
+	properties: Record<string, unknown>;
+	headers: Record<string, string>;
+}
+
+export interface DeleteEntityOptions {
+	entityName: string;
+	keys: Record<string, string | number | boolean>;
+	headers: Record<string, string>;
+}
+
 export default interface IODataClient {
 	initAsync(): Promise<void>;
 	getEntities(): MetadataEntity[];
 	getFunctions(): MetadataFunction[];
 	getActions(): MetadataAction[];
 	readEntity(options: ReadEntityOptions): Promise<unknown>;
-	getEntity(entityName: string, keys: Record<string, string | number | boolean>): Promise<unknown>;
-	createEntity(entityName: string, properties: Record<string, unknown>): Promise<void>;
-	deleteEntity(entityName: string, keys: Record<string, string | number | boolean>): Promise<void>;
+	getEntity(options: GetEntityOptions): Promise<unknown>;
+	createEntity(options: CreateEntityOptions): Promise<void>;
+	deleteEntity(options: DeleteEntityOptions): Promise<void>;
 	getMetadataText(): string;
 	executeFunction(options: {
 		functionName: string,

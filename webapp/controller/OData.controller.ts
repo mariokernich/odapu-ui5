@@ -622,6 +622,9 @@ export default class OData extends BaseController {
 		}
 	}
 
+	/**
+	 * ODATA: Execute function
+	 */
 	private async execFunctionRequest() {
 		this.setBusy(true);
 		try {
@@ -750,12 +753,24 @@ export default class OData extends BaseController {
 				}).addStyleClass("sapUiSmallMargin"),
 			],
 		});
-		dialog.setEndButton(
+		dialog.setBeginButton(
 			new Button({
 				text: "Save",
 				press: submit,
-				type: "Accept",
+				type: "Emphasized",
 				icon: "sap-icon://accept",
+			})
+		);
+		dialog.setEndButton(
+			
+			new Button({
+				text: "Cancel",
+				press: () => {
+					dialog.close();
+					dialog.destroy();
+				},
+				type: "Ghost",
+				icon: "sap-icon://decline",
 			})
 		);
 		dialog.open();
