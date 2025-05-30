@@ -20,9 +20,9 @@ export default interface IODataClient {
 	getFunctions(): MetadataFunction[];
 	getActions(): MetadataAction[];
 	readEntity(options: ReadEntityOptions): Promise<unknown>;
-	getEntity(entityName: string, keys: Record<string, string>): Promise<unknown>;
+	getEntity(entityName: string, keys: Record<string, string | number | boolean>): Promise<unknown>;
 	createEntity(entityName: string, properties: Record<string, unknown>): Promise<void>;
-	deleteEntity(entityName: string, keys: Record<string, string>): Promise<void>;
+	deleteEntity(entityName: string, keys: Record<string, string | number | boolean>): Promise<void>;
 	getMetadataText(): string;
 	executeFunction(options: {
 		functionName: string,

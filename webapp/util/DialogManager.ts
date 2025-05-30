@@ -318,6 +318,27 @@ export default class DialogManager extends ManagedObject {
 		value: string;
 	}> {
 		return new Promise((resolve, reject) => {
+			const segmentedButton = new SegmentedButton({
+				items: [
+					new SegmentedButtonItem({ text: "Custom Header", key: "custom" }),
+					new SegmentedButtonItem({ text: "Pre defined", key: "predefined" }),
+				],
+				width: "100%",
+				selectionChange: () => {
+					if(segmentedButton.getSelectedKey() === "custom") {
+						keyInput.setVisible(true);
+						select.setVisible(false);
+					} else {
+						keyInput.setVisible(false);
+						select.setVisible(true);
+					}
+				},
+			}).addStyleClass("sapUiSmallMarginBottom");
+
+			const select = new Select({
+				width: "100%",
+				visible: false,
+			});
 			const predefinedHeaders = [
 				{ key: "sap-client", value: "100" },
 				{ key: "sap-language", value: "EN" },
@@ -325,10 +346,21 @@ export default class DialogManager extends ManagedObject {
 				{ key: "content-type", value: "application/json" },
 				{ key: "x-csrf-token", value: "fetch" }
 			];
+			predefinedHeaders.forEach(header => {
+				select.addItem(new Item({ key: header.key, text: header.key }));
+			});
 
 			const submit = () => {
-				const key = keyInput ? keyInput.getValue() : keySelect.getSelectedKey();
+				let key: string = "";
 				const value = valueInput.getValue();
+				switch(segmentedButton.getSelectedKey()) {
+					case "custom":
+						key = keyInput.getValue();
+						break;
+					case "predefined":
+						key = select.getSelectedKey();
+						break;
+				}
 
 				if (!key) {
 					MessageToast.show("Please enter a key.");
@@ -345,49 +377,16 @@ export default class DialogManager extends ManagedObject {
 				resolve({ key: key, value: value });
 			};
 
-			let keyInput: Input;
-			let keySelect: Select;
 			const valueInput = new Input({
 				placeholder: "Enter value",
 				submit: submit,
+				width: "100%",
 			});
-			let currentKeyControl: Control;
 
-			const updateKeyControl = (isCustom: boolean) => {
-				if (currentKeyControl) {
-					keyContainer.removeItem(currentKeyControl);
-				}
-
-				if (isCustom) {
-					keyInput = new Input({
-						placeholder: "Enter key",
-						submit: submit,
-					});
-					currentKeyControl = keyInput;
-				} else {
-					keySelect = new Select({
-						items: predefinedHeaders.map(header => 
-							new Item({ key: header.key, text: header.key })
-						),
-						change: (event) => {
-							const selectedKey = event.getParameter("selectedItem").getKey();
-							const selectedHeader = predefinedHeaders.find(h => h.key === selectedKey);
-							if (selectedHeader) {
-								valueInput.setValue(selectedHeader.value);
-							}
-						},
-						width:"100%"
-					});
-					currentKeyControl = keySelect;
-				}
-
-				keyContainer.addItem(currentKeyControl);
-			};
-
-			
-
-			const keyContainer = new VBox({
-				items: []
+			const keyInput = new Input({
+				placeholder: "Enter key",
+				submit: submit,
+				width: "100%",
 			});
 
 			const dialog = new Dialog({
@@ -397,29 +396,16 @@ export default class DialogManager extends ManagedObject {
 				content: [
 					new VBox({
 						items: [
-							new SegmentedButton({
-								items: [
-									new SegmentedButtonItem({ text: "Custom Header" }),
-									new SegmentedButtonItem({ text: "Pre defined" }),
-								],
-								selectionChange: (event) => {
-									const selectedItem = event.getParameter("item");
-									const isCustom = selectedItem.getText() === "Custom Header";
-									updateKeyControl(isCustom);
-								},
-								width: "100%",
-							}).addStyleClass("sapUiSmallMarginBottom"),
+							segmentedButton,
 							new Label({ text: "Key" }),
-							keyContainer.addStyleClass("sapUiSmallMarginBottom"),
+							keyInput,
+							select,
 							new Label({ text: "Value" }),
 							valueInput,
 						],
 					}).addStyleClass("sapUiSmallMargin"),
 				],
 			});
-
-			// Initialize with custom header
-			updateKeyControl(true);
 
 			dialog.setBeginButton(
 				new Button({
@@ -441,9 +427,8 @@ export default class DialogManager extends ManagedObject {
 					icon: "sap-icon://decline",
 				})
 			);
-			dialog.setInitialFocus(keyInput);
+
 			dialog.open();
-			keyInput.focus();
 		});
 	}
 
