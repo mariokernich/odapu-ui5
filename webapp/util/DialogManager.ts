@@ -453,6 +453,11 @@ export default class DialogManager extends ManagedObject {
 			const operatorSelect = new Select({
 				items: [
 					new Item({ key: FilterOperator.Contains, text: "Contains" }),
+					new Item({ key: FilterOperator.NotContains, text: "Does Not Contain" }),
+					new Item({ key: FilterOperator.StartsWith, text: "Starts With" }),
+					new Item({ key: FilterOperator.EndsWith, text: "Ends With" }),
+					new Item({ key: FilterOperator.NotStartsWith, text: "Does Not Start With" }),
+					new Item({ key: FilterOperator.NotEndsWith, text: "Does Not End With" }),
 					new Item({ key: FilterOperator.EQ, text: "Equal" }),
 					new Item({ key: FilterOperator.NE, text: "Not Equal" }),
 					new Item({ key: FilterOperator.GT, text: "Greater Than" }),

@@ -375,8 +375,11 @@ export default class OData extends BaseController {
 			const keyProperties = properties.keyProperties;
 			const allProperties = { ...properties.properties, ...keyProperties };
 			await this.odataClient?.createEntity(
-				this.localData.selectedEntityName,
-				allProperties
+				{
+					entityName: this.localData.selectedEntityName,
+					properties: allProperties,
+					headers: this.getHeaders(),
+				}
 			);
 			this.localData.response = "";
 			MessageToast.show("Entity created");
@@ -407,8 +410,11 @@ export default class OData extends BaseController {
 			}
 
 			await this.odataClient?.deleteEntity(
-				this.localData.selectedEntityName,
-				properties.keyProperties
+				{
+					entityName: this.localData.selectedEntityName,
+					keys: properties.keyProperties,
+					headers: this.getHeaders(),
+				}
 			);
 			this.localData.response = "";
 			MessageToast.show("Entity deleted");
@@ -440,10 +446,11 @@ export default class OData extends BaseController {
 				return;
 			}
 
-			const data = await this.odataClient?.getEntity(
-				this.localData.selectedEntityName,
-				properties.keyProperties
-			);
+			const data = await this.odataClient?.getEntity({
+				entityName: this.localData.selectedEntityName,
+				keys: properties.keyProperties,
+				headers: this.getHeaders(),
+			});
 			this.localData.response = JSON.stringify(data, null, 2);
 			this.setTableResponse(data);
 		} finally {
