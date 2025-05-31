@@ -28,6 +28,6 @@ builder:
           password: env:SAP_PASSWORD
         app:
           name: ZODPU_UI5
-          description: "UI5_ODPU"
+          description: "UI5 resources"
           package: ZODPU
           transport: A4HK900098

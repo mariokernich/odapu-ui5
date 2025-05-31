@@ -18,7 +18,21 @@
 					"localUri": "localService/metadata.xml"
 				}
 			}
-		}
+		},
+		"crossNavigation": {
+            "inbounds": {
+                "dekernichodpu-manage": {
+                    "semanticObject": "dekernichodpu",
+                    "action": "manage",
+                    "title": "ODATA & APC",
+                    "icon": "sap-icon://laptop",
+                    "signature": {
+                        "parameters": {},
+                        "additionalParameters": "allowed"
+                    }
+                }
+            }
+        }
 	},
 
 	"sap.ui": {
@@ -108,5 +122,9 @@
 				}
 			}
 		}
-	}
+	},
+
+	"sap.cloud": {
+        "public": true
+    }
 }

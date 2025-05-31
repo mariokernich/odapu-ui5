@@ -382,8 +382,15 @@ export default class DialogManager extends ManagedObject {
 				type: "Emphasized",
 				icon: "sap-icon://accept",
 				press: () => {
+
+					const value = servicePathInput.getValue();
+					if (!value || value.trim().length === 0) {
+						MessageToast.show("Please enter a service path");
+						return;
+					}
+
 					resolve({
-						ServicePath: servicePathInput.getValue(),
+						ServicePath: value.trim(),
 						ODataType: segmentedButton.getSelectedKey() as "2"|"4",
 						Version: "",
 						ServiceName: "Custom Service",
