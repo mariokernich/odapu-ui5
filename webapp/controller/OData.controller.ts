@@ -242,6 +242,10 @@ export default class OData extends BaseController {
 		await this.loadService(service);
 	}
 
+	/**
+	 * Load service data
+	 * @param service - service entity
+	 */
 	private async loadService(service: ServiceEntity) {
 		this.setBusy(true);
 		try {
@@ -277,6 +281,9 @@ export default class OData extends BaseController {
 		}
 	}
 
+	/**
+	 * Handle service selected
+	 */
 	private handleServiceSelected() {
 		this.setBusy(true);
 		try {
@@ -317,8 +324,7 @@ export default class OData extends BaseController {
 	private async pickService() {
 		this.setBusy(true);
 		try {
-			const services = await this.component.requests.getServices();
-			return await this.component.dialogManager.pickService(services);
+			return await this.component.dialogManager.pickService();
 		} finally {
 			this.setBusy(false);
 		}
@@ -871,18 +877,27 @@ export default class OData extends BaseController {
 		Util.resetInputs(parametersVbox);
 	}
 
+	/**
+	 * Filter: delete filter configuration
+	 */
 	onButtonFilterDeletePress(event: Button$PressEvent) {
 		const binding = event.getSource().getBindingContext("entityFilters");
 		const obj = binding.getObject() as FilterRecord;
 		void this.handleButtonFilterDeletePress(obj);
 	}
 
+	/**
+	 * Filter: edit filter configuration
+	 */
 	onButtonFilterEditPress(event: Button$PressEvent) {
 		const binding = event.getSource().getBindingContext("entityFilters");
 		const obj = binding.getObject() as FilterRecord;
 		void this.handleButtonFilterEditPress(obj);
 	}
 
+	/**
+	 * Filter: delete filter configuration
+	 */
 	private handleButtonFilterDeletePress(obj: FilterRecord) {
 		const filters = (
 			this.getView().getModel("entityFilters") as JSONModel
@@ -899,6 +914,9 @@ export default class OData extends BaseController {
 		);
 	}
 
+	/**
+	 * Filter: edit filter configuration
+	 */
 	private async handleButtonFilterEditPress(obj: FilterRecord) {
 		const entity = this.selectedService.entities.find(
 			(e) => e.name === this.localData.selectedEntityName
@@ -945,6 +963,9 @@ export default class OData extends BaseController {
 		this.localData.response = historyItem.response;
 	}
 
+	/**
+	 * Sorter: add sort configuration
+	 */
 	private async handleAddSort() {
 		const entity = this.selectedService.entities.find(
 			(e) => e.name === this.localData.selectedEntityName
@@ -973,6 +994,9 @@ export default class OData extends BaseController {
 		);
 	}
 
+	/**
+	 * Sorter: delete sort configuration
+	 */
 	private handleButtonSortDeletePress(obj: {
 		property: string;
 		direction: "asc" | "desc";
@@ -989,6 +1013,9 @@ export default class OData extends BaseController {
 		);
 	}
 
+	/**
+	 * Project: save configuration to server
+	 */
 	private async handleSaveConfiguration() {
 		this.setBusy(true);
 		try {
@@ -1035,6 +1062,9 @@ export default class OData extends BaseController {
 		}
 	}
 
+	/**
+	 * Project: load configuration from server
+	 */
 	private async handleLoadConfiguration() {
 		try {
 			const selectedProject =

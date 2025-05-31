@@ -68,7 +68,7 @@ export default class Util extends ManagedObject {
 				if(control instanceof Switch) {
 					control.setState(false);
 				} else  {
-					control.setValue("");
+					control.setValue("" as never);
 				}
 		}
 		if (control instanceof Control) {

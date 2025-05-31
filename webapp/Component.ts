@@ -2,7 +2,7 @@ import UIComponent from "sap/ui/core/UIComponent";
 import DialogManager from "./util/DialogManager";
 import ODataModel from "sap/ui/model/odata/v2/ODataModel";
 import ODataRequests from "./util/ODataRequests";
-import * as Device from "sap/ui/Device";
+import Device from "sap/ui/Device";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import { Model$RequestFailedEvent } from "sap/ui/model/Model";
 import MessageBox from "sap/m/MessageBox";

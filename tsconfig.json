@@ -8,7 +8,7 @@
 		"strictNullChecks": false,
 		"strictPropertyInitialization": false,
 		"rootDir": "./webapp",
-		"types": ["@sapui5/types", "@types/qunit"],
+		"types": ["@sapui5/types"],
 		"paths": {
 			"de/kernich/odpu/*": ["./webapp/*"],
 			"unit/*": ["./webapp/test/unit/*"],

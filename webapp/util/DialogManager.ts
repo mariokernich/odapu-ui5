@@ -29,7 +29,6 @@ import GenericTile from "sap/m/GenericTile";
 import CSSGrid from "sap/ui/layout/cssgrid/CSSGrid";
 import SegmentedButtonItem from "sap/m/SegmentedButtonItem";
 import SegmentedButton from "sap/m/SegmentedButton";
-import Control from "sap/ui/core/Control";
 import Util from "./Util";
 import CodeEditor from "sap/ui/codeeditor/CodeEditor";
 import Icon from "sap/ui/core/Icon";
@@ -97,8 +96,9 @@ export default class DialogManager extends ManagedObject {
 
 		const table = new Table({
 			columns: [
-				new Column({ header: new Label({ text: "application_id" }) }),
-				new Column({ header: new Label({ text: "path" }) }),
+				new Column({ header: new Label({ text: "Application ID" }) }),
+				new Column({ header: new Label({ text: "Path" }) }),
+				new Column({ header: new Label({ text: "Description" }) }),
 				new Column({
 					header: new Label({ text: "protocol_type_id" }),
 				}),
@@ -118,6 +118,7 @@ export default class DialogManager extends ManagedObject {
 				cells: [
 					new Text({ text: "{apc>application_id}" }),
 					new Text({ text: "{apc>path}" }),
+					new Text({ text: "{apc>description}" }),
 					new Text({ text: "{apc>protocol_type_id}" }),
 					new Text({ text: "{apc>amc_message_type_id}" }),
 				],
@@ -165,11 +166,17 @@ export default class DialogManager extends ManagedObject {
 		});
 	}
 
-	public async pickService(services: ServiceEntity[]): Promise<ServiceEntity> {
+	public async pickService(): Promise<ServiceEntity> {
+		let services: ServiceEntity[] = [];
+		const serviceModel = new JSONModel(services);
+		
 		const dialog = new Dialog({
-			title: `Select Service (${services.length})`,
+			title: `Select Service`,
 			contentWidth: "80%",
 			contentHeight: "80%",
+			busyIndicatorDelay: 0,
+			draggable: true,
+			
 		});
 
 		const updateDialogTitle = () => {
@@ -194,11 +201,8 @@ export default class DialogManager extends ManagedObject {
 				}),
 			],
 			growing: true,
+			mode: "SingleSelectMaster"
 		});
-
-		//table.setSticky(["ColumnHeaders"]);
-
-		table.setMode("SingleSelectMaster");
 
 		table.bindItems({
 			path: "services>/",
@@ -260,21 +264,52 @@ export default class DialogManager extends ManagedObject {
 			},
 		});
 
+		const handleRefresh = async () => {
+			dialog.setBusy(true);
+			try {
+				services = await this.requests.getServices();
+				serviceModel.setProperty("/", services);
+				dialog.setTitle(`Select Service (${services.length})`);
+				MessageToast.show("Services refreshed");
+			} finally {
+				dialog.setBusy(false);
+			}
+		}
+
 		const toolbar = new Toolbar({
 			content: [
 				searchInput,
 				new ToolbarSpacer(),
 				dropdown,
-				new ToolbarSpacer(),
+				new Button({
+					press: () => {
+						void handleRefresh();
+					},
+					type: "Ghost",
+					tooltip: "Refresh Services",
+					icon: "sap-icon://refresh",
+				})
 			],
 		}).addStyleClass("sapUiResponsivePadding");
 
 		dialog.addContent(toolbar);
 		dialog.addContent(table);
-		//table.setInfoToolbar(toolbar);
-		dialog.setModel(new JSONModel(services), "services");
+		dialog.setModel(serviceModel, "services");
+
+		dialog.open();
+		dialog.setBusy(true);
+		services = await this.requests.getServices();
+		serviceModel.setProperty("/", services);
+		dialog.setTitle(`Select Service (${services.length})`);
+		dialog.setBusy(false);
 
 		return new Promise((resolve, reject) => {
+			const handlePickCustomService = async() => {
+				const service = await this.pickCustomService();
+				resolve(service);
+				dialog.close();
+				dialog.destroy();
+			}
 			dialog.addButton(
 				new Button({
 					text: "Choose",
@@ -294,6 +329,16 @@ export default class DialogManager extends ManagedObject {
 					},
 					type: "Emphasized",
 					icon: "sap-icon://accept",
+				}),
+			);
+			dialog.addButton(
+				new Button({
+					text: "Use Custom Service",
+					press: () => {
+						void handlePickCustomService();
+					},
+					type: "Ghost",
+					icon: "sap-icon://add-document",
 				})
 			);
 			dialog.addButton(
@@ -308,7 +353,68 @@ export default class DialogManager extends ManagedObject {
 					icon: "sap-icon://decline",
 				})
 			);
+		});
+	}
 
+	public async pickCustomService(): Promise<ServiceEntity> {
+		return new Promise((resolve, reject) => {
+			const dialog = new Dialog({
+				title: "Select Custom Service",
+				draggable: true,
+				contentWidth: "500px",
+			});
+
+			const segmentedButton = new SegmentedButton({
+				items: [
+					new SegmentedButtonItem({ text: "OData V2", key: "2" }),
+					new SegmentedButtonItem({ text: "OData V4", key: "4" }),
+				],
+				width: "100%"
+			});
+
+			const servicePathInput = new Input({
+				placeholder: "Enter service path",
+				width: "100%",
+			});
+
+			const saveButton = new Button({
+				text: "Save",
+				type: "Emphasized",
+				icon: "sap-icon://accept",
+				press: () => {
+					resolve({
+						ServicePath: servicePathInput.getValue(),
+						ODataType: segmentedButton.getSelectedKey() as "2"|"4",
+						Version: "",
+						ServiceName: "Custom Service",
+					});
+					dialog.close();
+					dialog.destroy();
+				},
+			});
+
+			const cancelButton = new Button({
+				text: "Cancel",
+				type: "Ghost",
+				icon: "sap-icon://decline",
+				press: () => {
+					dialog.close();
+					dialog.destroy();
+					reject(new Error("Dialog closed"));
+				},
+			});
+
+			dialog.addContent(new VBox({
+				items: [
+					segmentedButton,
+					servicePathInput,
+					new HBox({ items: [saveButton, cancelButton] }),
+				],
+			}).addStyleClass("sapUiSmallMargin"));
+
+			dialog.setBeginButton(saveButton);
+			dialog.setEndButton(cancelButton);
+			dialog.setInitialFocus(servicePathInput);
 			dialog.open();
 		});
 	}

@@ -181,6 +181,6 @@ export default class APC extends BaseController {
 	}
 
 	public setTitle(title: string) {
-		throw new Error("Not implemented");
+		throw new Error("Not implemented: " + title);
 	}
 }
