@@ -18,3 +18,7 @@ node_modules/
 .env
 archive.zip
 *.zip
+
+mta_archives/
+
+*.mta

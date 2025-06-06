@@ -13,13 +13,13 @@
             "source": "^/resources/(.*)$",
             "target": "/resources/$1",
             "authenticationType": "none",
-            "destination": "ui5"
+            "service": "html5-apps-repo-rt"
         },
         {
             "source": "^/test-resources/(.*)$",
             "target": "/test-resources/$1",
             "authenticationType": "none",
-            "destination": "ui5"
+            "service": "html5-apps-repo-rt"
         },
         {
             "source": "^(.*)$",

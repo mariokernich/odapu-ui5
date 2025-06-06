@@ -1,0 +1,49 @@
+_schema-version: '3.1'
+ID: de.kernich.odpu
+version: 1.0.0
+description: "ODATA & APC Test Tool"
+
+modules:
+  - name: de.kernich.odpu
+    type: html5
+    path: dist
+    parameters:
+      disk-quota: 256M
+      memory: 256M
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npm run build:opt
+    requires:
+      - name: de.kernich.odpu-destination
+      - name: de.kernich.odpu-uaa
+
+resources:
+  - name: de.kernich.odpu-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+      config:
+        HTML5Applications_enabled: true
+        version: 1.0.0
+        init_data:
+          instance:
+            existing_destinations_policy: update
+            destinations:
+              - name: ABAP_ENVIRONMENT
+                url: ~{ABAP_URL}
+                forwardAuthToken: true
+                sapCloudService: "abap"
+                sapCloudServiceAlias: "abap"
+              - name: de.kernich.odpu
+                url: ~{url}
+                forwardAuthToken: true
+
+  - name: de.kernich.odpu-uaa
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      path: ./xs-security.json 

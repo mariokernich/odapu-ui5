@@ -1,0 +1,40 @@
+{
+  "xsappname": "de.kernich.odpu",
+  "tenant-mode": "dedicated",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.Display",
+      "description": "Display access"
+    },
+    {
+      "name": "$XSAPPNAME.Edit",
+      "description": "Edit access"
+    }
+  ],
+  "attributes": [],
+  "role-templates": [
+    {
+      "name": "Viewer",
+      "description": "View access",
+      "scope-references": [
+        "$XSAPPNAME.Display"
+      ]
+    },
+    {
+      "name": "Administrator",
+      "description": "Administrator access",
+      "scope-references": [
+        "$XSAPPNAME.Display",
+        "$XSAPPNAME.Edit"
+      ]
+    }
+  ],
+  "oauth2-configuration": {
+    "redirect-uris": [
+      "https://*.cfapps.*.hana.ondemand.com/**",
+      "http://localhost:8080/**"
+    ],
+    "token-validity": 7200,
+    "refresh-token-validity": 2592000
+  }
+} 
