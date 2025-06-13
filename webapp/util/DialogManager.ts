@@ -2,7 +2,7 @@ import Column from "sap/m/Column";
 import Dialog from "sap/m/Dialog";
 import Label from "sap/m/Label";
 import {
-	ApcEntity,
+	PushChannelEntity,
 	FilterRecord,
 	MetadataEntityProperty,
 	Project,
@@ -53,7 +53,7 @@ export default class DialogManager extends ManagedObject {
 		this.requests = new ODataRequests(component.getModel() as ODataModel);
 	}
 
-	public async pickApc(apc: ApcEntity[]): Promise<ApcEntity> {
+	public async pickApc(apc: PushChannelEntity[]): Promise<PushChannelEntity> {
 		const dialog = new Dialog({
 			title: `Select Push Channel (${apc.length})`,
 			contentWidth: "80%",
@@ -77,8 +77,8 @@ export default class DialogManager extends ManagedObject {
 					query
 						? new Filter({
 								filters: [
-									new Filter("application_id", FilterOperator.Contains, query),
-									new Filter("path", FilterOperator.Contains, query),
+									new Filter("ApplicationId", FilterOperator.Contains, query),
+									new Filter("Path", FilterOperator.Contains, query),
 								],
 								and: false,
 						  })
@@ -116,11 +116,11 @@ export default class DialogManager extends ManagedObject {
 			path: "apc>/",
 			template: new ColumnListItem({
 				cells: [
-					new Text({ text: "{apc>application_id}" }),
-					new Text({ text: "{apc>path}" }),
-					new Text({ text: "{apc>description}" }),
-					new Text({ text: "{apc>protocol_type_id}" }),
-					new Text({ text: "{apc>amc_message_type_id}" }),
+					new Text({ text: "{apc>ApplicationId}" }),
+					new Text({ text: "{apc>Path}" }),
+					new Text({ text: "{apc>Description}" }),
+					new Text({ text: "{apc>ProtocolTypeId}" }),
+					new Text({ text: "{apc>AmcMessageTypeId}" }),
 				],
 			}),
 		});
@@ -140,7 +140,7 @@ export default class DialogManager extends ManagedObject {
 						}
 
 						const bindingContext = selectedItem.getBindingContext("apc");
-						const apc = bindingContext.getObject() as ApcEntity;
+						const apc = bindingContext.getObject() as PushChannelEntity;
 						resolve(apc);
 						dialog.close();
 						dialog.destroy();

@@ -1,20 +1,19 @@
 {
 	"compilerOptions": {
-		"target": "es2023",
-		"module": "es2022",
-		"skipLibCheck": true,
-		"allowJs": true,
+		"target": "ES2020",
+		"module": "ES2020",
+		"moduleResolution": "node",
 		"strict": true,
-		"strictNullChecks": false,
-		"strictPropertyInitialization": false,
-		"rootDir": "./webapp",
-		"types": ["@sapui5/types"],
-		"paths": {
-			"de/kernich/odpu/*": ["./webapp/*"],
-			"unit/*": ["./webapp/test/unit/*"],
-			"integration/*": ["./webapp/test/integration/*"]
-		}
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"noEmit": true,
+		"jsx": "preserve",
+		"lib": ["ES2020", "DOM"],
+		"types": ["@openui5/types", "@sapui5/types"]
 	},
-	"exclude": ["./webapp/test/e2e/**/*"],
-	"include": ["./webapp/**/*"]
+	"include": ["webapp/**/*", "odata2ts.config.ts"],
+	"exclude": ["node_modules", "dist", "coverage"]
 }

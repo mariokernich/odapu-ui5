@@ -1,6 +1,6 @@
 import ManagedObject from "sap/ui/base/ManagedObject";
 import Constants from "../Constants";
-import { Project, ServiceEntity } from "../Types";
+import { Project, PushChannelEntity, ServiceEntity } from "../Types";
 import ODataModel from "sap/ui/model/odata/v2/ODataModel";
 
 /**
@@ -20,8 +20,22 @@ export default class ODataRequests extends ManagedObject {
 
 	async getServices(): Promise<ServiceEntity[]> {
 		return new Promise((resolve, reject) => {
-			this.model.read("/serviceSet", {
+			this.model.read("/ODataService", {
 				success: (data: { results: ServiceEntity[] }) => {
+					resolve(data.results);
+				},
+				error: reject,
+				urlParameters: {
+					$top: Constants.SERVICE_QUERY_LIMIT.toString(),
+				},
+			});
+		});
+	}
+
+	async getPushChannels(): Promise<PushChannelEntity[]> {
+		return new Promise((resolve, reject) => {
+			this.model.read("/PushChannel", {
+				success: (data: { results: PushChannelEntity[] }) => {
 					resolve(data.results);
 				},
 				error: reject,
@@ -34,7 +48,7 @@ export default class ODataRequests extends ManagedObject {
 
 	async getProjects(): Promise<Project[]> {
 		return new Promise((resolve, reject) => {
-			this.model.read("/odataProjectSet", {
+			this.model.read("/ODataServiceProject", {
 				success: (data: { 
 					results: Project[]
 				}) => {
@@ -47,7 +61,7 @@ export default class ODataRequests extends ManagedObject {
 
 	async createProject(project: Project): Promise<void> {
 		return new Promise((resolve, reject) => {
-			this.model.create("/odataProjectSet", project, {
+			this.model.create("/ODataServiceProject", project, {
 				success: () => resolve(),
 				error: reject
 			});
@@ -56,7 +70,7 @@ export default class ODataRequests extends ManagedObject {
 	
 	async deleteProject(project: Project): Promise<void> {
 		return new Promise((resolve, reject) => {
-			const sPath = this.model.createKey("/odataProjectSet", {
+			const sPath = this.model.createKey("/ODataServiceProject", {
 				ProjectName: project.ProjectName
 			});
 			this.model.remove(sPath, {

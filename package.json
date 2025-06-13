@@ -4,12 +4,18 @@
 	"description": "ODATA & APC Test Tool",
 	"author": "Mario Kernich",
 	"license": "Apache-2.0",
+	"keywords": [
+		"ui5",
+		"openui5",
+		"sapui5"
+	],
 	"scripts": {
 		"clean": "rimraf dist coverage",
 		"build": "ui5 build --clean-dest",
 		"build:opt": "ui5 build self-contained --clean-dest --all",
 		"build:mta": "npm run build:opt && mbt build",
 		"build:ts-interfaces": "npx @ui5/ts-interface-generator",
+		"generate:odata": "odata2ts",
 		"start": "ui5 serve --port 8080 -o index.html",
 		"start:a4h": "ui5 serve --port 8080 --config=ui5-mock-a4h.yaml -o index.html",
 		"start-cdn": "ui5 serve --port 8080 -o index-cdn.html",
@@ -29,16 +35,19 @@
 		"wdi5": "wdio run ./webapp/test/e2e/wdio.conf.ts"
 	},
 	"devDependencies": {
+		"@odata2ts/odata2ts": "^0.39.1",
 		"@openui5/types": "^1.134.0",
 		"@sap/ux-ui5-tooling": "^1.17.3",
 		"@sapui5/types": "1.120.29",
 		"@ui5/cli": "^4.0.8",
 		"@ui5/linter": "^1.0.2",
+		"@ui5/ts-interface-generator": "^0.10.0",
 		"@wdio/cli": "^8.43.0",
 		"@wdio/local-runner": "^8.43.0",
 		"@wdio/mocha-framework": "^8.41.0",
 		"@wdio/spec-reporter": "^8.43.0",
 		"babel-plugin-istanbul": "^7.0.0",
+		"dotenv": "^16.0.3",
 		"eslint": "^9.12.0",
 		"globals": "^15.11.0",
 		"mbt": "^1.2.34",
@@ -52,8 +61,5 @@
 		"ui5-test-runner": "^5.4.3",
 		"ui5-tooling-transpile": "^3.5.0",
 		"wdio-ui5-service": "^2.1.1"
-	},
-	"dependencies": {
-		"@ui5/ts-interface-generator": "^0.10.0"
 	}
 }

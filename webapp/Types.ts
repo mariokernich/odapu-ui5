@@ -7,13 +7,13 @@ export type ServiceEntity = {
 	Version: string;
 };
 
-export type ApcEntity = {
-	application_id: string;
-	version: string;
-	path: string;
-	class_name: string;
-	protocol_type_id: string;
-	amc_message_type_id: string;
+export type PushChannelEntity = {
+	ApplicationId: string;
+	Version: string;
+	Path: string;
+	ClassName: string;
+	ProtocolTypeId: string;
+	AmcMessageTypeId: string;
 };
 
 export type MetadataEntity = {

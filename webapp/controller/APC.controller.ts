@@ -2,7 +2,7 @@ import ODataModel from "sap/ui/model/odata/v2/ODataModel";
 import BaseController from "./BaseController";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import MessageToast from "sap/m/MessageToast";
-import { ApcEntity } from "../Types";
+import { PushChannelEntity } from "../Types";
 import Constants from "../Constants";
 import Device from "sap/ui/Device";
 import Control from "sap/ui/core/Control";
@@ -89,10 +89,10 @@ export default class APC extends BaseController {
 	private async handleAddApc() {
 		this.setBusy(true);
 		try {
-			const apcList = await this.getApc();
+			const apcList = await this.getOwnerComponent().requests.getPushChannels();
 			const selectedApc = await this.component.dialogManager.pickApc(apcList);
 			this.apcModel.selectedApc = selectedApc;
-			this.setTitle(selectedApc.application_id);
+			this.setTitle(selectedApc.ApplicationId);
 		} finally {
 			this.setBusy(false);
 		}
@@ -135,21 +135,6 @@ export default class APC extends BaseController {
 		} finally {
 			this.setBusy(false);
 		}
-	}
-
-	private async getApc(): Promise<ApcEntity[]> {
-		const model = this.getOwnerComponent().getModel() as ODataModel;
-		return new Promise((resolve, reject) => {
-			model.read("/apcSet", {
-				success: (data: { results: ApcEntity[] }) => {
-					resolve(data.results);
-				},
-				error: reject,
-				urlParameters: {
-					$top: Constants.SERVICE_QUERY_LIMIT.toString(),
-				},
-			});
-		});
 	}
 
 	private getById(id: string): Control | undefined {
