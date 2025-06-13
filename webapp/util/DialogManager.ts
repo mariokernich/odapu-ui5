@@ -7,6 +7,7 @@ import {
 	MetadataEntityProperty,
 	Project,
 	ServiceEntity,
+	InfoEntity,
 } from "../Types";
 import ManagedObject from "sap/ui/base/ManagedObject";
 import JSONModel from "sap/ui/model/json/JSONModel";
@@ -16,13 +17,13 @@ import Button from "sap/m/Button";
 import MessageToast from "sap/m/MessageToast";
 import Text from "sap/m/Text";
 import ListBinding from "sap/ui/model/ListBinding";
-import SearchField from "sap/m/SearchField";
+import SearchField, { SearchField$LiveChangeEvent } from "sap/m/SearchField";
 import Item from "sap/ui/core/Item";
 import ToolbarSpacer from "sap/m/ToolbarSpacer";
 import Toolbar from "sap/m/Toolbar";
 import FilterOperator from "sap/ui/model/FilterOperator";
 import Filter from "sap/ui/model/Filter";
-import Select from "sap/m/Select";
+import Select, { Select$ChangeEvent } from "sap/m/Select";
 import VBox from "sap/m/VBox";
 import Input from "sap/m/Input";
 import GenericTile from "sap/m/GenericTile";
@@ -39,6 +40,12 @@ import { Button$PressEvent } from "sap/m/Button";
 import Component from "sap/ui/core/Component";
 import ODataRequests from "./ODataRequests";
 import ODataModel from "sap/ui/model/odata/v2/ODataModel";
+import Context from "sap/ui/model/odata/v2/Context";
+import Image from "sap/m/Image";
+import Link from "sap/m/Link";
+import FormattedText from "sap/m/FormattedText";
+import MessageStrip from "sap/m/MessageStrip";
+import ToolbarSeparator from "sap/m/ToolbarSeparator";
 
 /**
  * @namespace de.kernich.odpu.util
@@ -70,8 +77,8 @@ export default class DialogManager extends ManagedObject {
 
 		const searchInput = new SearchField({
 			placeholder: "Search Push Channels",
-			liveChange: (event) => {
-				const query = event.getParameter("newValue").toLowerCase();
+			liveChange: (event: SearchField$LiveChangeEvent) => {
+				const query = event.getParameter("newValue")?.toLowerCase() ?? "";
 				const binding = table.getBinding("items") as ListBinding;
 				binding.filter(
 					query
@@ -139,7 +146,7 @@ export default class DialogManager extends ManagedObject {
 							return;
 						}
 
-						const bindingContext = selectedItem.getBindingContext("apc");
+						const bindingContext = selectedItem.getBindingContext("apc") as Context;
 						const apc = bindingContext.getObject() as PushChannelEntity;
 						resolve(apc);
 						dialog.close();
@@ -246,8 +253,8 @@ export default class DialogManager extends ManagedObject {
 
 		const searchInput = new SearchField({
 			placeholder: "Search Services",
-			liveChange: (event) => {
-				searchQuery = event.getParameter("newValue").toLowerCase();
+			liveChange: (event: SearchField$LiveChangeEvent) => {
+				searchQuery = event.getParameter("newValue")?.toLowerCase() ?? "";
 				applyFilters();
 			},
 		});
@@ -258,8 +265,8 @@ export default class DialogManager extends ManagedObject {
 				new Item({ key: "2", text: "2" }),
 				new Item({ key: "4", text: "4" }),
 			],
-			change: (event) => {
-				selectedODataType = event.getParameter("selectedItem").getKey();
+			change: (event: Select$ChangeEvent) => {
+				selectedODataType = event.getParameter("selectedItem")?.getKey() ?? "ALL";
 				applyFilters();
 			},
 		});
@@ -321,7 +328,7 @@ export default class DialogManager extends ManagedObject {
 							return;
 						}
 
-						const bindingContext = selectedItem.getBindingContext("services");
+						const bindingContext = selectedItem.getBindingContext("services") as Context;
 						const service = bindingContext.getObject() as ServiceEntity;
 						resolve(service);
 						dialog.close();
@@ -755,42 +762,201 @@ export default class DialogManager extends ManagedObject {
 		});
 	}
 
-	public static async selectProjectType() {
+	public showUpdateAvailableDialog() {
+		const info = this.component.getModel("info") as JSONModel;
+		const infoEntity = info.getData() as InfoEntity;
+
+		const dialog = new Dialog({
+			title: "Update Available",
+			contentWidth: "400px",
+			draggable: true,
+			content: new VBox({
+				items: [
+					// Header with version info
+					new VBox({
+						items: [
+							new Text({
+								text: "A new version is available!",
+								wrapping: true
+							}).addStyleClass("sapThemeFontSizeLarge"),
+							new Text({
+								text: "Current Version: " + infoEntity.Version,
+								wrapping: true
+							}).addStyleClass("sapUiTinyMarginTop"),
+							new Text({
+								text: "Latest Version: " + infoEntity.RemoteVersion,
+								wrapping: true
+							}).addStyleClass("sapUiTinyMarginTop")
+						],
+						alignItems: "Center"
+					}).addStyleClass("sapUiSmallMarginBottom"),
+
+					new FormattedText({
+						htmlText: infoEntity.LatestReleaseBody || "No release notes available."
+					}).addStyleClass("sapUiTinyMarginBegin sapUiTinyMarginEnd"),
+				],
+				alignItems: "Center"
+			}).addStyleClass("sapUiSmallMargin")
+		});
+
+		dialog.setBeginButton(
+			new Button({
+				text: "Get Update",
+				press: () => {
+					window.open("https://github.com/mariokernich/odapu-abap/releases/latest", "_blank");
+				},
+				type: "Emphasized",
+				icon: "sap-icon://chain-link"
+			})
+		);
+
+		dialog.setEndButton(
+			new Button({
+				text: "Close",
+				press: () => {
+					dialog.close();
+					dialog.destroy();
+				},
+				type: "Ghost",
+				icon: "sap-icon://decline"
+			})
+		);
+
+		dialog.setInitialFocus(dialog.getBeginButton());
+		dialog.open();
+	}
+
+	public showAboutDialog() {
+		const info = this.component.getModel("info") as JSONModel;
+		const infoEntity = info.getData() as InfoEntity;
+
+		const infoBox = new VBox({
+			items: [
+				new Image({
+					src: sap.ui.require.toUrl("de/kernich/odpu/img/odapu-logo.png"),
+					width: "200px",
+					height: "auto",
+					decorative: false,
+					alt: "ODAPU Logo"
+				}),
+				new Text({
+					text: "ODATA & APC Test Tool"
+				}).addStyleClass("sapUiTinyMarginTop sapThemeFontSizeLarge"),
+				new Text({
+					text: "Installed Version: " + infoEntity.Version
+				}).addStyleClass("sapUiTinyMarginTop sapThemeFontSizeSmall"),
+			],
+			alignItems: "Center"
+		});
+
+		if(infoEntity.RemoteVersion && infoEntity.UpdateAvailable) {
+			infoBox.addItem(new MessageStrip({
+				text: "Update available! Download the latest version <strong>" + infoEntity.RemoteVersion + "</strong> from GitHub <a href='https://github.com/mariokernich/odapu-abap/releases/latest'>here</a>.",
+				type: "Information",
+				enableFormattedText: true,
+			}).addStyleClass("sapUiTinyMarginTop sapThemeFontSizeSmall"));
+		}
+
+		const dialog = new Dialog({
+			title: "About",
+			contentWidth: "400px",
+			draggable: true,
+			content: new VBox({
+				items: [
+					infoBox.addStyleClass("sapUiSmallMarginBottom"),
+					new Text({
+						text: "This app gives you a powerful tool to test ODATA services – whether it's modern ABAP RAP/CDS or classic SEGW projects – as well as APC (ABAP Push Channels).",
+						wrapping: true
+					}).addStyleClass("sapUiTinyMarginBottom sapUiTinyMarginBegin sapUiTinyMarginEnd"),
+
+					new Text({
+						text: "If you find this project helpful, please consider giving it a star on GitHub ⭐. For companies and individuals who want to support the development, sponsorship opportunities are available - sponsors will be prominently featured in the application.",
+						wrapping: true
+					}).addStyleClass("sapUiTinyMarginBottom sapUiTinyMarginBegin sapUiTinyMarginEnd"),
+
+					new HBox({
+						items: [
+							new Link({
+								text: "Developer: Mario Kernich 👨‍💻",
+								target: "_blank",
+								href: "https://www.linkedin.com/in/mariokernich/",
+								icon: "sap-icon://linkedin"
+							})
+						],
+						alignItems: "Center",
+						justifyContent: "Center",
+					}).addStyleClass("sapUiTinyMarginTop"),
+
+					new HBox({
+						items: [
+							new Link({
+								text: "GitHub Repository",
+								target: "_blank",
+								href: "https://github.com/mariokernich/odapu-abap",
+								icon: "sap-icon://github"
+							}).addStyleClass("sapUiSmallMarginEnd"),
+							new Link({
+								text: "Request Feature or Report Bug",
+								target: "_blank",
+								href: "https://github.com/mariokernich/odapu-abap/issues",
+								icon: "sap-icon://bug"
+							}),
+						],
+						justifyContent: "Center"
+					}).addStyleClass("sapUiSmallMarginTop")
+				],
+				alignItems: "Center"
+			}).addStyleClass("sapUiSmallMargin")
+		});
+
+		const closeButton = new Button({
+			text: "Close",
+			press: () => {
+				dialog.close();
+				dialog.destroy();
+			},
+			type: "Ghost",
+			icon: "sap-icon://decline"
+		});
+
+		dialog.setEndButton(closeButton);
+		dialog.setInitialFocus(closeButton);
+		dialog.open();
+	}
+
+	public async selectProjectType() {
 		return new Promise<"ODATA" | "APC">((resolve, reject) => {
 			const dialog = new Dialog({
 				title: "Choose type",
+				draggable: true,
 			});
 			const grid = new CSSGrid();
 
-			grid.addItem(
-				new GenericTile({
-					header: "OData",
-					subheader: "RAP Service, SEGW Project",
-					frameType: "OneByOne",
-					tileContent: [
-						new TileContent({
-							content:new VBox({
-								items: [
-									new Icon({
-										src: "sap-icon://add-activity",
-										size: "2rem",
-									})
-									/*
-									new Image({
-										src: sap.ui.require.toUrl("de/kernich/odpu/img/odata.png"),
-										width: "50px"
-									})*/
-								]
-							})
-						}),
-					],
-					press: () => {
-						resolve("ODATA");
-						dialog.close();
-						dialog.destroy();
-					},
-				})
-			);
+			const odataTile = new GenericTile({
+				header: "OData",
+				subheader: "RAP Service, SEGW Project",
+				frameType: "OneByOne",
+				tileContent: [
+					new TileContent({
+						content:new VBox({
+							items: [
+								new Icon({
+									src: "sap-icon://add-activity",
+									size: "2rem",
+								})
+							]
+						})
+					}),
+				],
+				press: () => {
+					resolve("ODATA");
+					dialog.close();
+					dialog.destroy();
+				},
+			})
+
+			grid.addItem(odataTile);
+
 			grid.addItem(
 				new GenericTile({
 					header: "APC",
@@ -820,12 +986,25 @@ export default class DialogManager extends ManagedObject {
 			grid.setGridGap("20px");
 
 			dialog.addContent(new VBox({
-				items: [new Text({ text: "Please select the type of project you want to create" }).addStyleClass("sapUiSmallMarginBottom"), grid],
+				items: [
+					new Text({ text: "Please select the type of project you want to create" }).addStyleClass("sapUiSmallMarginBottom"), 
+					grid,
+				],
 				width: "100%",
 				height: "100%",
 				fitContainer: true,
 			}));
 			dialog.addStyleClass("sapUiContentPadding");
+
+			dialog.addButton(
+				new Button({
+					text: "About",
+					icon: "sap-icon://information",
+					press: () => {
+						this.showAboutDialog();
+					},
+				})
+			);
 
 			dialog.addButton(
 				new Button({
@@ -838,6 +1017,7 @@ export default class DialogManager extends ManagedObject {
 					},
 				})
 			);
+			dialog.setInitialFocus(odataTile);
 			dialog.open();
 		});
 	}
@@ -962,8 +1142,8 @@ export default class DialogManager extends ManagedObject {
 		return new Promise((resolve, reject) => {
 			const searchInput = new SearchField({
 				placeholder: "Search Projects",
-				liveChange: (event) => {
-					const query = event.getParameter("newValue").toLowerCase();
+				liveChange: (event: SearchField$LiveChangeEvent) => {
+					const query = event.getParameter("newValue")?.toLowerCase() ?? "";
 					const binding = table.getBinding("items") as ListBinding;
 					binding.filter(
 						query

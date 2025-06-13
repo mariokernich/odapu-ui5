@@ -16,6 +16,13 @@ export type PushChannelEntity = {
 	AmcMessageTypeId: string;
 };
 
+export type InfoEntity = {
+	Version: string;
+	RemoteVersion: string;
+	UpdateAvailable: boolean;
+	LatestReleaseBody: string;
+}
+
 export type MetadataEntity = {
 	name: string;
 	entityType: string;

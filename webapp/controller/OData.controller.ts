@@ -817,8 +817,17 @@ export default class OData extends BaseController {
 		return headers;
 	}
 
-	onCopyTodpupboard() {
+	onSourceCopy() {
 		void this.handleCopy();
+	}
+
+	onSourceDownload() {
+		const response = this.localData.response;
+		if (response) {
+			Util.download(response, "response.json");
+		} else {
+			MessageToast.show("No response to download");
+		}
 	}
 
 	private async handleCopy() {

@@ -13,14 +13,6 @@ import JSONModel from "sap/ui/model/json/JSONModel";
  * @namespace de.kernich.odpu.controller
  */
 export default class Main extends BaseController {
-	local = {
-		githubIcon: sap.ui.require.toUrl("de/kernich/odpu/img/github-brands.svg"),
-		linkedinIcon: sap.ui.require.toUrl(
-			"de/kernich/odpu/img/linkedin-brands.svg"
-		),
-		odapuIcon: sap.ui.require.toUrl("de/kernich/odpu/img/odapu-logo.png"),
-	};
-
 	onTabContainerAddNewButtonPress() {
 		void this.handleAddNewButtonPress();
 	}
@@ -29,14 +21,13 @@ export default class Main extends BaseController {
 
 	onInit() {
 		super.onInit();
-
 		void this.handleInit();
-
-		this.getView().setModel(new JSONModel(this.local), "local");
 	}
 
 	private async handleInit() {
 		const tabContainer = this.getTabContainer();
+
+		await this.loadInfo();
 
 		const item = new TabContainerItem({
 			name: "Untitled",
@@ -79,6 +70,20 @@ export default class Main extends BaseController {
 		this.setSelectedItem(item);
 	}
 
+	private async loadInfo() {
+		this.setBusy(true);
+		try {
+			const info = await this.getOwnerComponent().requests.getInfo();
+			this.getOwnerComponent().setModel(new JSONModel(info), "info");
+
+			if(info.UpdateAvailable) {
+				this.getOwnerComponent().dialogManager.showUpdateAvailableDialog();
+			}
+		} finally {
+			this.setBusy(false);
+		}
+	}
+
 	private setSelectedItem(item: TabContainerItem) {
 		while (this.getTabContainer().getSelectedItem() !== item.getId()) {
 			this.getTabContainer().setSelectedItem(item);
@@ -86,8 +91,7 @@ export default class Main extends BaseController {
 	}
 
 	private async handleAddNewButtonPress() {
-		const projectType = await DialogManager.selectProjectType();
-		console.log(projectType);
+		const projectType = await this.getOwnerComponent().dialogManager.selectProjectType();
 
 		const tabContainer = this.getTabContainer();
 
@@ -168,6 +172,6 @@ export default class Main extends BaseController {
 	}
 
 	private getTabContainer() {
-		return this.getView().byId("idTabContainer") as TabContainer;
+		return this.getView()?.byId("idTabContainer") as TabContainer;
 	}
 }

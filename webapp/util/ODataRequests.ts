@@ -1,6 +1,6 @@
 import ManagedObject from "sap/ui/base/ManagedObject";
 import Constants from "../Constants";
-import { Project, PushChannelEntity, ServiceEntity } from "../Types";
+import { InfoEntity, Project, PushChannelEntity, ServiceEntity } from "../Types";
 import ODataModel from "sap/ui/model/odata/v2/ODataModel";
 
 /**
@@ -28,6 +28,17 @@ export default class ODataRequests extends ManagedObject {
 				urlParameters: {
 					$top: Constants.SERVICE_QUERY_LIMIT.toString(),
 				},
+			});
+		});
+	}
+
+	async getInfo(): Promise<InfoEntity> {
+		return new Promise((resolve, reject) => {
+			this.model.read("/Info", {
+				success: (data: { results: InfoEntity[] }) => {
+					resolve(data.results[0]);
+				},
+				error: reject,
 			});
 		});
 	}

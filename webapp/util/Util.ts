@@ -106,4 +106,13 @@ export default class Util extends ManagedObject {
 		}
 		return values;
 	};
+
+	public static download(data: string, filename: string) {
+		const blob = new Blob([data], { type: "application/json" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		a.click();
+	}
 }

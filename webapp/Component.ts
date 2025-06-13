@@ -70,7 +70,19 @@ export default class Component extends UIComponent {
 			}
 		});
 
+		this.setIconModel();
+
 		this.getRouter().initialize();
+	}
+
+	private setIconModel() {
+		this.setModel(new JSONModel({
+			githubIcon: sap.ui.require.toUrl("de/kernich/odpu/img/github-brands.svg"),
+			linkedinIcon: sap.ui.require.toUrl(
+				"de/kernich/odpu/img/linkedin-brands.svg"
+			),
+			odapuIcon: sap.ui.require.toUrl("de/kernich/odpu/img/odapu-logo.png"),
+		}), "icons");
 	}
 
 	/**
