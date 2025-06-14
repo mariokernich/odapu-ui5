@@ -7,6 +7,7 @@
         contentWidth="400px"
         draggable="true"
         initialFocus="idCloseButton"
+        busyIndicatorDelay="0"
         class="sapUiContentPadding"
     >
         <content>
@@ -86,7 +87,7 @@
         <endButton>
             <Button
                 text="Close"
-                press=".onClose"
+                press="onConfirm"
                 type="Ghost"
                 id="idCloseButton"
                 icon="sap-icon://decline"

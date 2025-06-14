@@ -91,7 +91,7 @@ export default class APC extends BaseController {
 		try {
 			const apcList = await this.getOwnerComponent().requests.getPushChannels();
 			const selectedApc = await this.component.dialogManager.pickApc(apcList);
-			this.apcModel.selectedApc = selectedApc;
+			(this.getView()?.getModel("apcModel") as JSONModel).setProperty("/selectedApc/path", selectedApc.Path);
 			this.setTitle(selectedApc.ApplicationId);
 		} finally {
 			this.setBusy(false);

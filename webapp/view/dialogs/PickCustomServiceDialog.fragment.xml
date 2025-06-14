@@ -1,0 +1,43 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+    <Dialog
+        title="Select Custom Service"
+        contentWidth="500px"
+        draggable="true">
+        <content>
+            <VBox class="sapUiSmallMargin">
+                <SegmentedButton
+                    width="100%"
+                    selectedKey="{dialog>/selectedType}"
+                    class="sapUiTinyMarginBottom">
+                    <items>
+                        <SegmentedButtonItem
+                            key="2"
+                            text="OData V2" />
+                        <SegmentedButtonItem
+                            key="4"
+                            text="OData V4" />
+                    </items>
+                </SegmentedButton>
+                <Input
+                    width="100%"
+                    placeholder="Enter service path"
+                    value="{dialog>/servicePath}"
+                    submit="onSubmit" />
+            </VBox>
+        </content>
+        <buttons>
+            <Button
+                text="Save"
+                type="Emphasized"
+                icon="sap-icon://accept"
+                press="onConfirm" />
+            <Button
+                text="Cancel"
+                type="Ghost"
+                icon="sap-icon://decline"
+                press="onCancel" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition> 

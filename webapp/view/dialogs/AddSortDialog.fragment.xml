@@ -1,0 +1,49 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+    <Dialog
+        title="Add Sorter"
+        contentWidth="400px"
+        draggable="true">
+        <content>
+            <VBox class="sapUiSmallMargin">
+                <Label text="Property" />
+                <Select
+                    id="idPropertiesSelect"
+                    width="100%"
+                    items="{dialog>/properties}"
+                    selectedKey="{dialog>/selectedProperty}">
+                    <items>
+                        <core:Item
+                            key="{dialog>key}"
+                            text="{dialog>text}" />
+                    </items>
+                </Select>
+                <Label text="Direction" />
+                <Select
+                    id="idDirectionsSelect"
+                    width="100%"
+                    items="{dialog>/directions}"
+                    selectedKey="{dialog>/selectedDirection}">
+                    <items>
+                        <core:Item
+                            key="{dialog>key}"
+                            text="{dialog>text}" />
+                    </items>
+                </Select>
+            </VBox>
+        </content>
+        <buttons>
+            <Button
+                text="Save"
+                type="Emphasized"
+                icon="sap-icon://accept"
+                press="onConfirm" />
+            <Button
+                text="Cancel"
+                type="Ghost"
+                icon="sap-icon://decline"
+                press="onCancel" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition> 

@@ -1,0 +1,89 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+    <Dialog
+        title="Select Service"
+        contentWidth="80%"
+        contentHeight="80%">
+        <content>
+            <Toolbar>
+                <SearchField
+                    width="100%"
+                    placeholder="Search Services"
+                    liveChange="onSearch" />
+                <ToolbarSpacer />
+                <Select
+                    width="100px"
+                    items="{dialog>/odataTypes}"
+                    selectedKey="{dialog>/selectedODataType}"
+                    change="onODataTypeChange">
+                    <items>
+                        <core:Item
+                            key="{dialog>key}"
+                            text="{dialog>text}" />
+                    </items>
+                </Select>
+                <Button
+                    icon="sap-icon://refresh"
+                    press="onRefresh"
+                    tooltip="Refresh Services" />
+            </Toolbar>
+            <Table
+                id="idServiceTable"
+                mode="SingleSelectMaster"
+                growing="true"
+                growingThreshold="100"
+                items="{dialog>/services}">
+                <columns>
+                    <Column>
+                        <header>
+                            <Label text="Service Name" />
+                        </header>
+                    </Column>
+                    <Column>
+                        <header>
+                            <Label text="Service Path" />
+                        </header>
+                    </Column>
+                    <Column>
+                        <header>
+                            <Label text="OData Type" />
+                        </header>
+                    </Column>
+                    <Column>
+                        <header>
+                            <Label text="Version" />
+                        </header>
+                    </Column>
+                </columns>
+                <items>
+                    <ColumnListItem>
+                        <cells>
+                            <Text text="{dialog>ServiceName}" />
+                            <Text text="{dialog>ServicePath}" />
+                            <Text text="{dialog>ODataType}" />
+                            <Text text="{dialog>Version}" />
+                        </cells>
+                    </ColumnListItem>
+                </items>
+            </Table>
+        </content>
+        <buttons>
+            <Button
+                text="Choose"
+                type="Emphasized"
+                icon="sap-icon://accept"
+                press="onChoose" />
+            <Button
+                text="Custom Service"
+                type="Ghost"
+                icon="sap-icon://add"
+                press="onCustomService" />
+            <Button
+                text="Cancel"
+                type="Ghost"
+                icon="sap-icon://decline"
+                press="onCancel" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition> 

@@ -1,0 +1,42 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+    <Dialog
+        title="Update Available"
+        contentWidth="400px"
+        draggable="true">
+        <content>
+            <VBox class="sapUiSmallMargin" alignItems="Center">
+                <VBox alignItems="Center" class="sapUiSmallMarginBottom">
+                    <Text
+                        text="A new version is available!"
+                        wrapping="true"
+                        class="sapThemeFontSizeLarge" />
+                    <Text
+                        text="Current Version: {dialog>/currentVersion}"
+                        wrapping="true"
+                        class="sapUiTinyMarginTop" />
+                    <Text
+                        text="Latest Version: {dialog>/latestVersion}"
+                        wrapping="true"
+                        class="sapUiTinyMarginTop" />
+                </VBox>
+                <FormattedText
+                    htmlText="{dialog>/releaseNotes}"
+                    class="sapUiTinyMarginBegin sapUiTinyMarginEnd" />
+            </VBox>
+        </content>
+        <buttons>
+            <Button
+                text="Get Update"
+                type="Emphasized"
+                icon="sap-icon://chain-link"
+                press="onGetUpdate" />
+            <Button
+                text="Close"
+                type="Ghost"
+                icon="sap-icon://decline"
+                press="onClose" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition> 
