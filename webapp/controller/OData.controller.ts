@@ -36,6 +36,7 @@ import HBox from "sap/m/HBox";
 import Icon from "sap/ui/core/Icon";
 import { Input$ChangeEvent } from "sap/ui/webc/main/Input";
 import Sorter from "sap/ui/model/Sorter";
+import Context from "sap/ui/model/odata/v2/Context";
 
 /**
  * @namespace de.kernich.odpu.controller
@@ -88,12 +89,12 @@ export default class OData extends BaseController {
 	 * Register models for the view
 	 */
 	private registerModels() {
-		this.getView().setModel(new JSONModel(this.localData, true), "local");
-		this.getView().setModel(
+		this.getView()?.setModel(new JSONModel(this.localData, true), "local");
+		this.getView()?.setModel(
 			new JSONModel(this.selectedService, true),
 			"selectedService"
 		);
-		this.getView().setModel(
+		this.getView()?.setModel(
 			new JSONModel(
 				{
 					name: "",
@@ -106,10 +107,23 @@ export default class OData extends BaseController {
 			),
 			"selectedFunction"
 		);
-		this.getView().setModel(new JSONModel([], true), "entityFilters");
-		this.getView().setModel(new JSONModel([], true), "entitySorting");
-		this.getView().setModel(new JSONModel([], true), "requestHistory");
-		this.getView().setModel(new JSONModel([], true), "requestHeaders");
+		this.getView()?.setModel(
+			new JSONModel(
+				{
+					name: "",
+					returnType: "",
+					entitySet: "",
+					method: "POST",
+					parameters: [],
+				} as SelectedFunctionModel,
+				true
+			),
+			"selectedAction"
+		);
+		this.getView()?.setModel(new JSONModel([], true), "entityFilters");
+		this.getView()?.setModel(new JSONModel([], true), "entitySorting");
+		this.getView()?.setModel(new JSONModel([], true), "requestHistory");
+		this.getView()?.setModel(new JSONModel([], true), "requestHeaders");
 	}
 
 	/**
@@ -152,6 +166,13 @@ export default class OData extends BaseController {
 	}
 
 	/**
+	 * Event handler: Action selection changed
+	 */
+	onSelectAction() {
+		this.handleActionChanged();
+	}
+
+	/**
 	 * Event handler: Add filter button pressed
 	 */
 	onAddFilterButtonPress() {
@@ -169,7 +190,7 @@ export default class OData extends BaseController {
 	 * Event handler: Delete sorter button pressed
 	 */
 	onButtonSortDeletePress(event: Button$PressEvent) {
-		const binding = event.getSource().getBindingContext("entitySorting");
+		const binding = event.getSource().getBindingContext("entitySorting") as Context;
 		const obj = binding.getObject() as {
 			property: string;
 			direction: "asc" | "desc";
@@ -274,7 +295,7 @@ export default class OData extends BaseController {
 					break;
 			}
 
-			await this.odataClient.initAsync();
+			await this.odataClient?.initAsync();
 			this.handleServiceSelected();
 		} finally {
 			this.setBusy(false);
@@ -298,20 +319,27 @@ export default class OData extends BaseController {
 			this.localData.selectedServiceActions =
 				this.odataClient?.getActions() || [];
 
-			this.localData.entityCount = this.selectedService.entities.length;
+			this.localData.entityCount = this.selectedService.entities?.length || 0;
 			this.localData.functionCount =
-				this.localData.selectedServiceFunctions.length;
-			this.localData.actionCount = this.localData.selectedServiceActions.length;
-			if (this.selectedService.entities.length > 0) {
+				this.localData.selectedServiceFunctions?.length || 0;
+			this.localData.actionCount = this.localData.selectedServiceActions?.length || 0;
+
+			if (this.selectedService.entities?.length > 0) {
 				this.localData.selectedEntityName =
 					this.selectedService.entities[0].name;
 				this.handleEntityChanged();
 			}
 
-			if (this.localData.selectedServiceFunctions.length > 0) {
+			if (this.localData.selectedServiceFunctions?.length > 0) {
 				this.localData.selectedFunctionName =
 					this.localData.selectedServiceFunctions[0].name;
 				this.handleFunctionChanged();
+			}
+
+			if (this.localData.selectedServiceActions?.length > 0) {
+				this.localData.selectedActionName =
+					this.localData.selectedServiceActions[0].name;
+				this.handleActionChanged();
 			}
 		} finally {
 			this.setBusy(false);
@@ -369,6 +397,24 @@ export default class OData extends BaseController {
 			"/",
 			selectedFunction
 		);
+	}
+
+	/**
+	 * Load data of selected action to selectedAction model
+	 */
+	private handleActionChanged() {
+		this.resetFunctionInputs();
+
+		const selectedAction = this.localData.selectedServiceActions?.find(
+			(action) => action.name === this.localData.selectedActionName
+		);
+
+		if (selectedAction) {
+			(this.getView()?.getModel("selectedAction") as JSONModel).setProperty(
+				"/",
+				selectedAction
+			);
+		}
 	}
 
 	/**
@@ -472,10 +518,10 @@ export default class OData extends BaseController {
 
 		const headers = this.getHeaders();
 		const filters = (
-			this.getView().getModel("entityFilters") as JSONModel
+			this.getView()?.getModel("entityFilters") as JSONModel
 		).getProperty("/") as FilterRecord[];
 		const sorting = (
-			this.getView().getModel("entitySorting") as JSONModel
+			this.getView()?.getModel("entitySorting") as JSONModel
 		).getProperty("/") as { property: string; direction: "asc" | "desc" }[];
 
 		try {
@@ -495,7 +541,7 @@ export default class OData extends BaseController {
 			this.setTableResponse(response);
 
 			const history = (
-				this.getView().getModel("requestHistory") as JSONModel
+				this.getView()?.getModel("requestHistory") as JSONModel
 			).getProperty("/") as RequestHistory[];
 
 			history.push({
@@ -506,7 +552,7 @@ export default class OData extends BaseController {
 				response: this.localData.response,
 			});
 
-			(this.getView().getModel("requestHistory") as JSONModel).setProperty(
+			(this.getView()?.getModel("requestHistory") as JSONModel).setProperty(
 				"/",
 				history
 			);
@@ -659,14 +705,14 @@ export default class OData extends BaseController {
 	}
 
 	private resetFilters() {
-		(this.getView().getModel("entityFilters") as JSONModel).setProperty(
+		(this.getView()?.getModel("entityFilters") as JSONModel).setProperty(
 			"/",
 			[]
 		);
 	}
 
 	private resetSorting() {
-		(this.getView().getModel("entitySorting") as JSONModel).setProperty(
+		(this.getView()?.getModel("entitySorting") as JSONModel).setProperty(
 			"/",
 			[]
 		);
@@ -699,7 +745,7 @@ export default class OData extends BaseController {
 		}
 
 		filters.push(filter);
-		(this.getView().getModel("entityFilters") as JSONModel).setProperty(
+		(this.getView()?.getModel("entityFilters") as JSONModel).setProperty(
 			"/",
 			filters
 		);
@@ -708,7 +754,7 @@ export default class OData extends BaseController {
 	private async handleAddHeader() {
 		const header = await this.component.dialogManager.showAddHeaderDialog();
 		const headers = (
-			this.getView().getModel("requestHeaders") as JSONModel
+			this.getView()?.getModel("requestHeaders") as JSONModel
 		).getProperty("/") as RequestHeader[];
 		const existingHeader = headers.find((h) => h.key === header.key);
 		if (existingHeader) {
@@ -720,7 +766,7 @@ export default class OData extends BaseController {
 				key: header.key,
 				value: header.value,
 			});
-			(this.getView().getModel("requestHeaders") as JSONModel).setProperty(
+			(this.getView()?.getModel("requestHeaders") as JSONModel).setProperty(
 				"/",
 				headers
 			);
@@ -728,9 +774,9 @@ export default class OData extends BaseController {
 	}
 
 	onEditHeader(event: Button$PressEvent) {
-		const binding = event.getSource().getBindingContext("requestHeaders");
+		const binding = event.getSource().getBindingContext("requestHeaders") as Context;
 		const headers = (
-			this.getView().getModel("requestHeaders") as JSONModel
+			this.getView()?.getModel("requestHeaders") as JSONModel
 		).getProperty("/") as RequestHeader[];
 		const obj = binding.getObject() as { key: string; value: string };
 
@@ -742,7 +788,7 @@ export default class OData extends BaseController {
 			const index = headers.findIndex((header) => header.key === obj.key);
 			if (index > -1) {
 				headers[index].value = valueInput.getValue();
-				(this.getView().getModel("requestHeaders") as JSONModel).setProperty(
+				(this.getView()?.getModel("requestHeaders") as JSONModel).setProperty(
 					"/",
 					headers
 				);
@@ -791,16 +837,16 @@ export default class OData extends BaseController {
 	}
 
 	onDeleteHeader(event: Button$PressEvent) {
-		const binding = event.getSource().getBindingContext("requestHeaders");
+		const binding = event.getSource().getBindingContext("requestHeaders") as Context;
 		const obj = binding.getObject() as { key: string; value: string };
 		const headers = (
-			this.getView().getModel("requestHeaders") as JSONModel
+			this.getView()?.getModel("requestHeaders") as JSONModel
 		).getProperty("/") as RequestHeader[];
 		const index = headers.findIndex((header) => header.key === obj.key);
 		if (index > -1) {
 			headers.splice(index, 1);
 		}
-		(this.getView().getModel("requestHeaders") as JSONModel).setProperty(
+		(this.getView()?.getModel("requestHeaders") as JSONModel).setProperty(
 			"/",
 			headers
 		);
@@ -809,7 +855,7 @@ export default class OData extends BaseController {
 	private getHeaders() {
 		const headers: Record<string, string> = {};
 		const headerValues = (
-			this.getView().getModel("requestHeaders") as JSONModel
+			this.getView()?.getModel("requestHeaders") as JSONModel
 		).getProperty("/") as RequestHeader[];
 		headerValues.forEach((header) => {
 			headers[header.key] = header.value;
@@ -890,7 +936,7 @@ export default class OData extends BaseController {
 	 * Filter: delete filter configuration
 	 */
 	onButtonFilterDeletePress(event: Button$PressEvent) {
-		const binding = event.getSource().getBindingContext("entityFilters");
+		const binding = event.getSource().getBindingContext("entityFilters") as Context;
 		const obj = binding.getObject() as FilterRecord;
 		void this.handleButtonFilterDeletePress(obj);
 	}
@@ -899,7 +945,7 @@ export default class OData extends BaseController {
 	 * Filter: edit filter configuration
 	 */
 	onButtonFilterEditPress(event: Button$PressEvent) {
-		const binding = event.getSource().getBindingContext("entityFilters");
+		const binding = event.getSource().getBindingContext("entityFilters") as Context;
 		const obj = binding.getObject() as FilterRecord;
 		void this.handleButtonFilterEditPress(obj);
 	}
@@ -909,7 +955,7 @@ export default class OData extends BaseController {
 	 */
 	private handleButtonFilterDeletePress(obj: FilterRecord) {
 		const filters = (
-			this.getView().getModel("entityFilters") as JSONModel
+			this.getView()?.getModel("entityFilters") as JSONModel
 		).getProperty("/") as FilterRecord[];
 		const filteredList = filters.filter(
 			(filter) =>
@@ -917,7 +963,7 @@ export default class OData extends BaseController {
 				filter.operator !== obj.operator &&
 				filter.value !== obj.value
 		);
-		(this.getView().getModel("entityFilters") as JSONModel).setProperty(
+		(this.getView()?.getModel("entityFilters") as JSONModel).setProperty(
 			"/",
 			filteredList
 		);
@@ -935,7 +981,7 @@ export default class OData extends BaseController {
 			return;
 		}
 		const filters = (
-			this.getView().getModel("entityFilters") as JSONModel
+			this.getView()?.getModel("entityFilters") as JSONModel
 		).getProperty("/") as FilterRecord[];
 		const index = filters.findIndex(
 			(f) =>
@@ -967,7 +1013,7 @@ export default class OData extends BaseController {
 	}
 
 	onButtonViewResponsePress(event: Button$PressEvent) {
-		const binding = event.getSource().getBindingContext("requestHistory");
+		const binding = event.getSource().getBindingContext("requestHistory") as Context;
 		const historyItem = binding.getObject() as RequestHistory;
 		this.localData.response = historyItem.response;
 	}
@@ -987,7 +1033,7 @@ export default class OData extends BaseController {
 		const sort = await this.component.dialogManager.addSort(entity.properties);
 
 		const sorting = (
-			this.getView().getModel("entitySorting") as JSONModel
+			this.getView()?.getModel("entitySorting") as JSONModel
 		).getProperty("/") as { property: string; direction: "asc" | "desc" }[];
 
 		const conflict = sorting.find((s) => s.property === sort.property);
@@ -997,7 +1043,7 @@ export default class OData extends BaseController {
 		}
 
 		sorting.push(sort);
-		(this.getView().getModel("entitySorting") as JSONModel).setProperty(
+		(this.getView()?.getModel("entitySorting") as JSONModel).setProperty(
 			"/",
 			sorting
 		);
@@ -1011,12 +1057,12 @@ export default class OData extends BaseController {
 		direction: "asc" | "desc";
 	}) {
 		const sorting = (
-			this.getView().getModel("entitySorting") as JSONModel
+			this.getView()?.getModel("entitySorting") as JSONModel
 		).getProperty("/") as { property: string; direction: "asc" | "desc" }[];
 		const filteredList = sorting.filter(
 			(sort) => sort.property !== obj.property
 		);
-		(this.getView().getModel("entitySorting") as JSONModel).setProperty(
+		(this.getView()?.getModel("entitySorting") as JSONModel).setProperty(
 			"/",
 			filteredList
 		);
@@ -1031,19 +1077,19 @@ export default class OData extends BaseController {
 			const projectName =
 				await this.component.dialogManager.showSaveProjectDialog();
 			const localData = (
-				this.getView().getModel("local") as JSONModel
+				this.getView()?.getModel("local") as JSONModel
 			).getProperty("/") as MainViewModel;
 			const filters = (
-				this.getView().getModel("entityFilters") as JSONModel
+				this.getView()?.getModel("entityFilters") as JSONModel
 			).getProperty("/") as FilterRecord[];
 			const headers = (
-				this.getView().getModel("requestHeaders") as JSONModel
+				this.getView()?.getModel("requestHeaders") as JSONModel
 			).getProperty("/") as RequestHeader[];
 			const sorters = (
-				this.getView().getModel("entitySorting") as JSONModel
+				this.getView()?.getModel("entitySorting") as JSONModel
 			).getProperty("/") as { property: string; direction: "asc" | "desc" }[];
 			const selectedService = (
-				this.getView().getModel("selectedService") as JSONModel
+				this.getView()?.getModel("selectedService") as JSONModel
 			).getProperty("/") as SelectedServiceModel;
 
 			const project = {
@@ -1081,7 +1127,7 @@ export default class OData extends BaseController {
 
 			if (selectedProject) {
 				const localData = (
-					this.getView().getModel("local") as JSONModel
+					this.getView()?.getModel("local") as JSONModel
 				).getProperty("/") as MainViewModel;
 
 				const service = {
@@ -1105,19 +1151,19 @@ export default class OData extends BaseController {
 					? selectedProject.Skip
 					: 0;
 
-				(this.getView().getModel("local") as JSONModel).setProperty(
+				(this.getView()?.getModel("local") as JSONModel).setProperty(
 					"/",
 					localData
 				);
-				(this.getView().getModel("entityFilters") as JSONModel).setProperty(
+				(this.getView()?.getModel("entityFilters") as JSONModel).setProperty(
 					"/",
 					JSON.parse(selectedProject.Filters) as FilterRecord[]
 				);
-				(this.getView().getModel("entitySorting") as JSONModel).setProperty(
+				(this.getView()?.getModel("entitySorting") as JSONModel).setProperty(
 					"/",
 					JSON.parse(selectedProject.Sorters)
 				);
-				(this.getView().getModel("requestHeaders") as JSONModel).setProperty(
+				(this.getView()?.getModel("requestHeaders") as JSONModel).setProperty(
 					"/",
 					JSON.parse(selectedProject.Headers)
 				);

@@ -45,7 +45,6 @@ import Image from "sap/m/Image";
 import Link from "sap/m/Link";
 import FormattedText from "sap/m/FormattedText";
 import MessageStrip from "sap/m/MessageStrip";
-import ToolbarSeparator from "sap/m/ToolbarSeparator";
 
 /**
  * @namespace de.kernich.odpu.util
@@ -53,6 +52,7 @@ import ToolbarSeparator from "sap/m/ToolbarSeparator";
 export default class DialogManager extends ManagedObject {
 	private component: Component;
 	private requests: ODataRequests;
+	private fragmentRoot = "de.kernich.odpu.view.dialogs";
 
 	constructor(component: Component) {
 		super();
