@@ -26,14 +26,9 @@ import Filter from "sap/ui/model/Filter";
 import Select, { Select$ChangeEvent } from "sap/m/Select";
 import VBox from "sap/m/VBox";
 import Input from "sap/m/Input";
-import GenericTile from "sap/m/GenericTile";
-import CSSGrid from "sap/ui/layout/cssgrid/CSSGrid";
 import SegmentedButtonItem from "sap/m/SegmentedButtonItem";
 import SegmentedButton from "sap/m/SegmentedButton";
 import Util from "./Util";
-import CodeEditor from "sap/ui/codeeditor/CodeEditor";
-import Icon from "sap/ui/core/Icon";
-import TileContent from "sap/m/TileContent";
 import HBox from "sap/m/HBox";
 import MessageBox from "sap/m/MessageBox";
 import { Button$PressEvent } from "sap/m/Button";
@@ -41,10 +36,8 @@ import Component from "sap/ui/core/Component";
 import ODataRequests from "./ODataRequests";
 import ODataModel from "sap/ui/model/odata/v2/ODataModel";
 import Context from "sap/ui/model/odata/v2/Context";
-import Image from "sap/m/Image";
-import Link from "sap/m/Link";
 import FormattedText from "sap/m/FormattedText";
-import MessageStrip from "sap/m/MessageStrip";
+import Fragment from "sap/ui/core/Fragment";
 
 /**
  * @namespace de.kernich.odpu.util
@@ -146,7 +139,9 @@ export default class DialogManager extends ManagedObject {
 							return;
 						}
 
-						const bindingContext = selectedItem.getBindingContext("apc") as Context;
+						const bindingContext = selectedItem.getBindingContext(
+							"apc"
+						) as Context;
 						const apc = bindingContext.getObject() as PushChannelEntity;
 						resolve(apc);
 						dialog.close();
@@ -174,193 +169,127 @@ export default class DialogManager extends ManagedObject {
 	}
 
 	public async pickService(): Promise<ServiceEntity> {
-		let services: ServiceEntity[] = [];
-		const serviceModel = new JSONModel(services);
-		
-		const dialog = new Dialog({
-			title: `Select Service`,
-			contentWidth: "80%",
-			contentHeight: "80%",
-			busyIndicatorDelay: 0,
-			draggable: true,
-			
+		let resolveFn: (value: ServiceEntity) => void;
+		let rejectFn: (reason?: Error) => void;
+
+		const resultPromise = new Promise<ServiceEntity>((resolve, reject) => {
+			resolveFn = resolve;
+			rejectFn = reject;
 		});
 
+		const services = await this.requests.getServices();
+		const serviceModel = new JSONModel(services);
+
+		const dialogModel = new JSONModel({
+			odataTypes: [
+				{ key: "ALL", text: "All" },
+				{ key: "2", text: "2" },
+				{ key: "4", text: "4" }
+			],
+			searchQuery: "",
+			selectedODataType: "ALL"
+		});
+
+		const dialog = (await Fragment.load({
+			name: `${this.fragmentRoot}.PickService`,
+			controller: {
+				onSearch: (event: SearchField$LiveChangeEvent) => {
+					const query = event.getParameter("newValue")?.toLowerCase() ?? "";
+					dialogModel.setProperty("/searchQuery", query);
+					applyFilters();
+				},
+				onODataTypeChange: (event: Select$ChangeEvent) => {
+					const selectedKey = event.getParameter("selectedItem")?.getKey() ?? "ALL";
+					dialogModel.setProperty("/selectedODataType", selectedKey);
+					applyFilters();
+				},
+				onRefresh: async () => {
+					dialog.setBusy(true);
+					try {
+						const updatedServices = await this.requests.getServices();
+						serviceModel.setProperty("/", updatedServices);
+						dialog.setTitle(`Select Service (${updatedServices.length})`);
+						MessageToast.show("Services refreshed");
+					} finally {
+						dialog.setBusy(false);
+					}
+				},
+				onChoose: () => {
+					const selectedItem = table.getSelectedItem();
+					if (!selectedItem) {
+						MessageToast.show("Please select a service.");
+						return;
+					}
+					const bindingContext = selectedItem.getBindingContext("services") as Context;
+					const service = bindingContext.getObject() as ServiceEntity;
+					resolveFn(service);
+					dialog.close();
+					dialog.destroy();
+				},
+				onCustomService: async () => {
+					try {
+						const service = await this.pickCustomService();
+						resolveFn(service);
+						dialog.close();
+						dialog.destroy();
+					} catch {
+						// Ignore error as it's handled in pickCustomService
+					}
+				},
+				onCancel: () => {
+					rejectFn(new Error("Dialog closed"));
+					dialog.close();
+					dialog.destroy();
+				}
+			}
+		})) as Dialog;
+
+		const table = dialog.getContent()[1] as Table;
 		const updateDialogTitle = () => {
 			const binding = table.getBinding("items") as ListBinding;
 			const filteredLength = binding ? binding.getLength() : 0;
 			dialog.setTitle(`Select Service (${filteredLength})`);
 		};
 
-		const table = new Table({
-			growingThreshold: 9999,
-			columns: [
-				new Column({ header: new Label({ text: "Service Name / Group ID" }) }),
-				new Column({ header: new Label({ text: "Service Path" }) }),
-				new Column({ header: new Label({ text: "Description" }) }),
-				new Column({
-					header: new Label({ text: "OData Type" }),
-					width: "100px",
-				}),
-				new Column({
-					header: new Label({ text: "Version" }),
-					width: "100px",
-				}),
-			],
-			growing: true,
-			mode: "SingleSelectMaster"
-		});
-
-		table.bindItems({
-			path: "services>/",
-			template: new ColumnListItem({
-				cells: [
-					new Text({ text: "{services>ServiceName}{services>GroupId}" }),
-					new Text({ text: "{services>ServicePath}" }),
-					new Text({ text: "{services>Description}" }),
-					new Text({ text: "{services>ODataType}" }),
-					new Text({ text: "{services>Version}" }),
-				],
-			}),
-		});
-
-		let searchQuery = "";
-		let selectedODataType = "ALL";
-
 		const applyFilters = () => {
 			const binding = table.getBinding("items") as ListBinding;
 			const filters: Filter[] = [];
+			const searchQuery = dialogModel.getProperty("/searchQuery") as string;
+			const selectedODataType = dialogModel.getProperty("/selectedODataType") as string;
 
 			// Add search filter if query exists
 			if (searchQuery) {
-				filters.push(new Filter({
-					filters: [
-						new Filter("ServiceName", FilterOperator.Contains, searchQuery),
-						new Filter("ServicePath", FilterOperator.Contains, searchQuery)
-					],
-				}));
+				filters.push(
+					new Filter({
+						filters: [
+							new Filter("ServiceName", FilterOperator.Contains, searchQuery),
+							new Filter("ServicePath", FilterOperator.Contains, searchQuery),
+						],
+						and: false,
+					})
+				);
 			}
 
 			// Add OData type filter if not ALL
 			if (selectedODataType !== "ALL") {
-				filters.push(new Filter("ODataType", FilterOperator.EQ, selectedODataType));
+				filters.push(
+					new Filter("ODataType", FilterOperator.EQ, selectedODataType)
+				);
 			}
 
 			// Apply combined filters
-			binding.filter(filters.length > 0 ? new Filter({ filters: filters, and: true }) : []);
+			binding.filter(
+				filters.length > 0 ? new Filter({ filters: filters, and: true }) : []
+			);
 			updateDialogTitle();
 		};
 
-		const searchInput = new SearchField({
-			placeholder: "Search Services",
-			liveChange: (event: SearchField$LiveChangeEvent) => {
-				searchQuery = event.getParameter("newValue")?.toLowerCase() ?? "";
-				applyFilters();
-			},
-		});
-
-		const dropdown = new Select({
-			items: [
-				new Item({ key: "ALL", text: "All" }),
-				new Item({ key: "2", text: "2" }),
-				new Item({ key: "4", text: "4" }),
-			],
-			change: (event: Select$ChangeEvent) => {
-				selectedODataType = event.getParameter("selectedItem")?.getKey() ?? "ALL";
-				applyFilters();
-			},
-		});
-
-		const handleRefresh = async () => {
-			dialog.setBusy(true);
-			try {
-				services = await this.requests.getServices();
-				serviceModel.setProperty("/", services);
-				dialog.setTitle(`Select Service (${services.length})`);
-				MessageToast.show("Services refreshed");
-			} finally {
-				dialog.setBusy(false);
-			}
-		}
-
-		const toolbar = new Toolbar({
-			content: [
-				searchInput,
-				new ToolbarSpacer(),
-				dropdown,
-				new Button({
-					press: () => {
-						void handleRefresh();
-					},
-					type: "Ghost",
-					tooltip: "Refresh Services",
-					icon: "sap-icon://refresh",
-				})
-			],
-		}).addStyleClass("sapUiResponsivePadding");
-
-		dialog.addContent(toolbar);
-		dialog.addContent(table);
 		dialog.setModel(serviceModel, "services");
-
-		dialog.open();
-		dialog.setBusy(true);
-		services = await this.requests.getServices();
-		serviceModel.setProperty("/", services);
+		dialog.setModel(dialogModel, "dialog");
 		dialog.setTitle(`Select Service (${services.length})`);
-		dialog.setBusy(false);
+		dialog.open();
 
-		return new Promise((resolve, reject) => {
-			const handlePickCustomService = async() => {
-				const service = await this.pickCustomService();
-				resolve(service);
-				dialog.close();
-				dialog.destroy();
-			}
-			dialog.addButton(
-				new Button({
-					text: "Choose",
-					press: () => {
-						const selectedItem = table.getSelectedItem();
-
-						if (!selectedItem) {
-							MessageToast.show("Please select a service.");
-							return;
-						}
-
-						const bindingContext = selectedItem.getBindingContext("services") as Context;
-						const service = bindingContext.getObject() as ServiceEntity;
-						resolve(service);
-						dialog.close();
-						dialog.destroy();
-					},
-					type: "Emphasized",
-					icon: "sap-icon://accept",
-				}),
-			);
-			dialog.addButton(
-				new Button({
-					text: "Use Custom Service",
-					press: () => {
-						void handlePickCustomService();
-					},
-					type: "Ghost",
-					icon: "sap-icon://add-document",
-				})
-			);
-			dialog.addButton(
-				new Button({
-					text: "Cancel",
-					press: () => {
-						reject(new Error("Dialog closed"));
-						dialog.close();
-						dialog.destroy();
-					},
-					type: "Ghost",
-					icon: "sap-icon://decline",
-				})
-			);
-		});
+		return resultPromise;
 	}
 
 	public async pickCustomService(): Promise<ServiceEntity> {
@@ -376,7 +305,7 @@ export default class DialogManager extends ManagedObject {
 					new SegmentedButtonItem({ text: "OData V2", key: "2" }),
 					new SegmentedButtonItem({ text: "OData V4", key: "4" }),
 				],
-				width: "100%"
+				width: "100%",
 			});
 
 			const servicePathInput = new Input({
@@ -389,7 +318,6 @@ export default class DialogManager extends ManagedObject {
 				type: "Emphasized",
 				icon: "sap-icon://accept",
 				press: () => {
-
 					const value = servicePathInput.getValue();
 					if (!value || value.trim().length === 0) {
 						MessageToast.show("Please enter a service path");
@@ -398,7 +326,7 @@ export default class DialogManager extends ManagedObject {
 
 					resolve({
 						ServicePath: value.trim(),
-						ODataType: segmentedButton.getSelectedKey() as "2"|"4",
+						ODataType: segmentedButton.getSelectedKey() as "2" | "4",
 						Version: "",
 						ServiceName: "Custom Service",
 					});
@@ -418,13 +346,15 @@ export default class DialogManager extends ManagedObject {
 				},
 			});
 
-			dialog.addContent(new VBox({
-				items: [
-					segmentedButton,
-					servicePathInput,
-					new HBox({ items: [saveButton, cancelButton] }),
-				],
-			}).addStyleClass("sapUiSmallMargin"));
+			dialog.addContent(
+				new VBox({
+					items: [
+						segmentedButton,
+						servicePathInput,
+						new HBox({ items: [saveButton, cancelButton] }),
+					],
+				}).addStyleClass("sapUiSmallMargin")
+			);
 
 			dialog.setBeginButton(saveButton);
 			dialog.setEndButton(cancelButton);
@@ -445,7 +375,7 @@ export default class DialogManager extends ManagedObject {
 				],
 				width: "100%",
 				selectionChange: () => {
-					if(segmentedButton.getSelectedKey() === "custom") {
+					if (segmentedButton.getSelectedKey() === "custom") {
 						keyInput.setVisible(true);
 						select.setVisible(false);
 					} else {
@@ -464,16 +394,16 @@ export default class DialogManager extends ManagedObject {
 				{ key: "sap-language", value: "EN" },
 				{ key: "accept", value: "application/json" },
 				{ key: "content-type", value: "application/json" },
-				{ key: "x-csrf-token", value: "fetch" }
+				{ key: "x-csrf-token", value: "fetch" },
 			];
-			predefinedHeaders.forEach(header => {
+			predefinedHeaders.forEach((header) => {
 				select.addItem(new Item({ key: header.key, text: header.key }));
 			});
 
 			const submit = () => {
 				let key: string = "";
 				const value = valueInput.getValue();
-				switch(segmentedButton.getSelectedKey()) {
+				switch (segmentedButton.getSelectedKey()) {
 					case "custom":
 						key = keyInput.getValue();
 						break;
@@ -567,17 +497,33 @@ export default class DialogManager extends ManagedObject {
 			};
 
 			const propertySelect = new Select({
-				items: properties.filter(x => x.name.toLowerCase() !== "delete_mc" && x.name.toLowerCase() !== "update_mc" && x.name.toLowerCase() !== "create_mc").map((p) => new Item({ key: p.name, text: p.name })),
+				items: properties
+					.filter(
+						(x) =>
+							x.name.toLowerCase() !== "delete_mc" &&
+							x.name.toLowerCase() !== "update_mc" &&
+							x.name.toLowerCase() !== "create_mc"
+					)
+					.map((p) => new Item({ key: p.name, text: p.name })),
 				width: "100%",
 			});
 			const operatorSelect = new Select({
 				items: [
 					new Item({ key: FilterOperator.Contains, text: "Contains" }),
-					new Item({ key: FilterOperator.NotContains, text: "Does Not Contain" }),
+					new Item({
+						key: FilterOperator.NotContains,
+						text: "Does Not Contain",
+					}),
 					new Item({ key: FilterOperator.StartsWith, text: "Starts With" }),
 					new Item({ key: FilterOperator.EndsWith, text: "Ends With" }),
-					new Item({ key: FilterOperator.NotStartsWith, text: "Does Not Start With" }),
-					new Item({ key: FilterOperator.NotEndsWith, text: "Does Not End With" }),
+					new Item({
+						key: FilterOperator.NotStartsWith,
+						text: "Does Not Start With",
+					}),
+					new Item({
+						key: FilterOperator.NotEndsWith,
+						text: "Does Not End With",
+					}),
 					new Item({ key: FilterOperator.EQ, text: "Equal" }),
 					new Item({ key: FilterOperator.NE, text: "Not Equal" }),
 					new Item({ key: FilterOperator.GT, text: "Greater Than" }),
@@ -641,7 +587,10 @@ export default class DialogManager extends ManagedObject {
 		});
 	}
 
-	public async editFilter(filter: FilterRecord, properties: MetadataEntityProperty[]): Promise<FilterRecord> {
+	public async editFilter(
+		filter: FilterRecord,
+		properties: MetadataEntityProperty[]
+	): Promise<FilterRecord> {
 		return new Promise((resolve, reject) => {
 			const submit = () => {
 				dialog.close();
@@ -652,9 +601,16 @@ export default class DialogManager extends ManagedObject {
 					value: input.getValue(),
 				});
 			};
-			
+
 			const propertySelect = new Select({
-				items: properties.filter(x => x.name.toLowerCase() !== "delete_mc" && x.name.toLowerCase() !== "update_mc" && x.name.toLowerCase() !== "create_mc").map((p) => new Item({ key: p.name, text: p.name })),
+				items: properties
+					.filter(
+						(x) =>
+							x.name.toLowerCase() !== "delete_mc" &&
+							x.name.toLowerCase() !== "update_mc" &&
+							x.name.toLowerCase() !== "create_mc"
+					)
+					.map((p) => new Item({ key: p.name, text: p.name })),
 				width: "100%",
 			});
 			const operatorSelect = new Select({
@@ -667,13 +623,13 @@ export default class DialogManager extends ManagedObject {
 				],
 				width: "100%",
 			});
-			
+
 			const input = new Input({
 				placeholder: "Enter value",
 				submit: submit,
 				width: "100%",
 			});
-			
+
 			input.setValue(filter.value);
 			propertySelect.setSelectedKey(filter.property);
 			operatorSelect.setSelectedKey(filter.operator);
@@ -717,7 +673,6 @@ export default class DialogManager extends ManagedObject {
 				})
 			);
 			dialog.open();
-			
 		});
 	}
 
@@ -777,36 +732,40 @@ export default class DialogManager extends ManagedObject {
 						items: [
 							new Text({
 								text: "A new version is available!",
-								wrapping: true
+								wrapping: true,
 							}).addStyleClass("sapThemeFontSizeLarge"),
 							new Text({
 								text: "Current Version: " + infoEntity.Version,
-								wrapping: true
+								wrapping: true,
 							}).addStyleClass("sapUiTinyMarginTop"),
 							new Text({
 								text: "Latest Version: " + infoEntity.RemoteVersion,
-								wrapping: true
-							}).addStyleClass("sapUiTinyMarginTop")
+								wrapping: true,
+							}).addStyleClass("sapUiTinyMarginTop"),
 						],
-						alignItems: "Center"
+						alignItems: "Center",
 					}).addStyleClass("sapUiSmallMarginBottom"),
 
 					new FormattedText({
-						htmlText: infoEntity.LatestReleaseBody || "No release notes available."
+						htmlText:
+							infoEntity.LatestReleaseBody || "No release notes available.",
 					}).addStyleClass("sapUiTinyMarginBegin sapUiTinyMarginEnd"),
 				],
-				alignItems: "Center"
-			}).addStyleClass("sapUiSmallMargin")
+				alignItems: "Center",
+			}).addStyleClass("sapUiSmallMargin"),
 		});
 
 		dialog.setBeginButton(
 			new Button({
 				text: "Get Update",
 				press: () => {
-					window.open("https://github.com/mariokernich/odapu-abap/releases/latest", "_blank");
+					window.open(
+						"https://github.com/mariokernich/odapu-abap/releases/latest",
+						"_blank"
+					);
 				},
 				type: "Emphasized",
-				icon: "sap-icon://chain-link"
+				icon: "sap-icon://chain-link",
 			})
 		);
 
@@ -818,7 +777,7 @@ export default class DialogManager extends ManagedObject {
 					dialog.destroy();
 				},
 				type: "Ghost",
-				icon: "sap-icon://decline"
+				icon: "sap-icon://decline",
 			})
 		);
 
@@ -826,200 +785,74 @@ export default class DialogManager extends ManagedObject {
 		dialog.open();
 	}
 
-	public showAboutDialog() {
+	public async showAboutDialog() {
+		let resolveFn: () => void;
+		const resultPromise = new Promise<void>((resolve) => {
+			resolveFn = resolve;
+		});
+
 		const info = this.component.getModel("info") as JSONModel;
 		const infoEntity = info.getData() as InfoEntity;
 
-		const infoBox = new VBox({
-			items: [
-				new Image({
-					src: sap.ui.require.toUrl("de/kernich/odpu/img/odapu-logo.png"),
-					width: "200px",
-					height: "auto",
-					decorative: false,
-					alt: "ODAPU Logo"
-				}),
-				new Text({
-					text: "ODATA & APC Test Tool"
-				}).addStyleClass("sapUiTinyMarginTop sapThemeFontSizeLarge"),
-				new Text({
-					text: "Installed Version: " + infoEntity.Version
-				}).addStyleClass("sapUiTinyMarginTop sapThemeFontSizeSmall"),
-			],
-			alignItems: "Center"
+		const model = new JSONModel({
+			Version: infoEntity.Version,
+			RemoteVersion: infoEntity.RemoteVersion,
+			UpdateAvailable: infoEntity.UpdateAvailable,
+			Logo: sap.ui.require.toUrl("de/kernich/odpu/img/odapu-logo.png"),
 		});
 
-		if(infoEntity.RemoteVersion && infoEntity.UpdateAvailable) {
-			infoBox.addItem(new MessageStrip({
-				text: "Update available! Download the latest version <strong>" + infoEntity.RemoteVersion + "</strong> from GitHub <a href='https://github.com/mariokernich/odapu-abap/releases/latest'>here</a>.",
-				type: "Information",
-				enableFormattedText: true,
-			}).addStyleClass("sapUiTinyMarginTop sapThemeFontSizeSmall"));
-		}
-
-		const dialog = new Dialog({
-			title: "About",
-			contentWidth: "400px",
-			draggable: true,
-			content: new VBox({
-				items: [
-					infoBox.addStyleClass("sapUiSmallMarginBottom"),
-					new Text({
-						text: "This app gives you a powerful tool to test ODATA services – whether it's modern ABAP RAP/CDS or classic SEGW projects – as well as APC (ABAP Push Channels).",
-						wrapping: true
-					}).addStyleClass("sapUiTinyMarginBottom sapUiTinyMarginBegin sapUiTinyMarginEnd"),
-
-					new Text({
-						text: "If you find this project helpful, please consider giving it a star on GitHub ⭐. For companies and individuals who want to support the development, sponsorship opportunities are available - sponsors will be prominently featured in the application.",
-						wrapping: true
-					}).addStyleClass("sapUiTinyMarginBottom sapUiTinyMarginBegin sapUiTinyMarginEnd"),
-
-					new HBox({
-						items: [
-							new Link({
-								text: "Developer: Mario Kernich 👨‍💻",
-								target: "_blank",
-								href: "https://www.linkedin.com/in/mariokernich/",
-								icon: "sap-icon://linkedin"
-							})
-						],
-						alignItems: "Center",
-						justifyContent: "Center",
-					}).addStyleClass("sapUiTinyMarginTop"),
-
-					new HBox({
-						items: [
-							new Link({
-								text: "GitHub Repository",
-								target: "_blank",
-								href: "https://github.com/mariokernich/odapu-abap",
-								icon: "sap-icon://github"
-							}).addStyleClass("sapUiSmallMarginEnd"),
-							new Link({
-								text: "Request Feature or Report Bug",
-								target: "_blank",
-								href: "https://github.com/mariokernich/odapu-abap/issues",
-								icon: "sap-icon://bug"
-							}),
-						],
-						justifyContent: "Center"
-					}).addStyleClass("sapUiSmallMarginTop")
-				],
-				alignItems: "Center"
-			}).addStyleClass("sapUiSmallMargin")
-		});
-
-		const closeButton = new Button({
-			text: "Close",
-			press: () => {
-				dialog.close();
-				dialog.destroy();
+		const dialog = (await Fragment.load({
+			name: `${this.fragmentRoot}.AboutDialog`,
+			controller: {
+				onClose: () => {
+					dialog.close();
+					resolveFn();
+				},
 			},
-			type: "Ghost",
-			icon: "sap-icon://decline"
-		});
+		})) as Dialog;
 
-		dialog.setEndButton(closeButton);
-		dialog.setInitialFocus(closeButton);
+		dialog.setModel(model, "dialog");
 		dialog.open();
+
+		return resultPromise;
 	}
 
 	public async selectProjectType() {
-		return new Promise<"ODATA" | "APC">((resolve, reject) => {
-			const dialog = new Dialog({
-				title: "Choose type",
-				draggable: true,
-			});
-			const grid = new CSSGrid();
+		let resolveFn: (value: string) => void;
+		let rejectFn: (reason?: Error) => void;
 
-			const odataTile = new GenericTile({
-				header: "OData",
-				subheader: "RAP Service, SEGW Project",
-				frameType: "OneByOne",
-				tileContent: [
-					new TileContent({
-						content:new VBox({
-							items: [
-								new Icon({
-									src: "sap-icon://add-activity",
-									size: "2rem",
-								})
-							]
-						})
-					}),
-				],
-				press: () => {
-					resolve("ODATA");
+		const resultPromise = new Promise<string>((resolve, reject) => {
+			resolveFn = resolve;
+			rejectFn = reject;
+		});
+
+		const dialog = (await Fragment.load({
+			name: `${this.fragmentRoot}.SelectProjectType`,
+			controller: {
+				onSelectOData: () => {
+					resolveFn("ODATA");
 					dialog.close();
 					dialog.destroy();
 				},
-			})
+				onSelectAPC: () => {
+					resolveFn("ODATA");
+					dialog.close();
+					dialog.destroy();
+				},
+				onShowAbout: () => {
+					void this.showAboutDialog();
+				},
+				onCancel: () => {
+					rejectFn(new Error("Dialog closed"));
+					dialog.close();
+					dialog.destroy();
+				},
+			},
+		})) as Dialog;
 
-			grid.addItem(odataTile);
+		dialog.open();
 
-			grid.addItem(
-				new GenericTile({
-					header: "APC",
-					subheader: "ABAP Push Channel",
-					frameType: "OneByOne",
-					tileContent: [
-						new TileContent({
-							content:new VBox({
-								items: [
-									new Icon({
-										src: "sap-icon://add-activity",
-										size: "2rem",
-									}),
-								]
-							})
-						}),
-					],
-					press: () => {
-						resolve("APC");
-						dialog.close();
-						dialog.destroy();
-					},
-				})
-			);
-
-			grid.setGridTemplateColumns("1fr 1fr");
-			grid.setGridGap("20px");
-
-			dialog.addContent(new VBox({
-				items: [
-					new Text({ text: "Please select the type of project you want to create" }).addStyleClass("sapUiSmallMarginBottom"), 
-					grid,
-				],
-				width: "100%",
-				height: "100%",
-				fitContainer: true,
-			}));
-			dialog.addStyleClass("sapUiContentPadding");
-
-			dialog.addButton(
-				new Button({
-					text: "About",
-					icon: "sap-icon://information",
-					press: () => {
-						this.showAboutDialog();
-					},
-				})
-			);
-
-			dialog.addButton(
-				new Button({
-					text: "Cancel",
-					icon: "sap-icon://decline",
-					press: () => {
-						dialog.close();
-						dialog.destroy();
-						reject(new Error("Dialog closed"));
-					},
-				})
-			);
-			dialog.setInitialFocus(odataTile);
-			dialog.open();
-		});
+		return resultPromise;
 	}
 
 	public async addSort(
@@ -1036,7 +869,14 @@ export default class DialogManager extends ManagedObject {
 			};
 
 			const propertySelect = new Select({
-				items: properties.filter(x => x.name.toLowerCase() !== "delete_mc" && x.name.toLowerCase() !== "update_mc" && x.name.toLowerCase() !== "create_mc").map((p) => new Item({ key: p.name, text: p.name })),
+				items: properties
+					.filter(
+						(x) =>
+							x.name.toLowerCase() !== "delete_mc" &&
+							x.name.toLowerCase() !== "update_mc" &&
+							x.name.toLowerCase() !== "create_mc"
+					)
+					.map((p) => new Item({ key: p.name, text: p.name })),
 				width: "100%",
 			});
 			const directionSelect = new Select({
@@ -1088,53 +928,35 @@ export default class DialogManager extends ManagedObject {
 	}
 
 	public async showXmlCodeEditor(xml: string) {
-		return new Promise((resolve) => {
-			const formattedXml = xml ? Util.formatXml(xml) : "";
-			const dialog = new Dialog({
-				title: "Metadata",
-				contentHeight: "100%",
-				contentWidth: "100%",
-			});
-			const editor = new CodeEditor({
-				editable: false,
-				type: "xml",
-				value: formattedXml,
-				width: "100%",
-				height: "100%",
-				maxLines: 1000,
-				syntaxHints: false,
-			});
-			dialog.addContent(
-				new VBox({
-					items: [editor],
-					width: "100%",
-					height: "100%",
-					fitContainer: true,
-				})
-			);
-			dialog.addButton(
-				new Button({
-					text: "Copy",
-					icon: "sap-icon://copy",
-					press: () => {
-						void Util.copy2Clipboard(formattedXml);
-						MessageToast.show("Copied to clipboard");
-					},
-				})
-			);
-			dialog.addButton(
-				new Button({
-					text: "Close",
-					icon: "sap-icon://decline",
-					press: () => {
-						dialog.close();
-						dialog.destroy();
-						resolve(false);
-					},
-				})
-			);
-			dialog.open();
+		let resolveFn: () => void;
+		const resultPromise = new Promise<void>((resolve) => {
+			resolveFn = resolve;
 		});
+		const formattedXml = xml ? Util.formatXml(xml) : "";
+
+		const model = new JSONModel({
+			xml: formattedXml
+		});
+
+		const dialog = (await Fragment.load({
+			name: `${this.fragmentRoot}.XmlCodeEditor`,
+			controller: {
+				onCopy: () => {
+					void Util.copy2Clipboard(formattedXml);
+					MessageToast.show("Copied to clipboard");
+				},
+				onClose: () => {
+					dialog.close();
+					dialog.destroy();
+					resolveFn();
+				}
+			}
+		})) as Dialog;
+
+		dialog.setModel(model, "dialog");
+		dialog.open();
+
+		return resultPromise;
 	}
 
 	public async showProjectListDialog(): Promise<Project> {
@@ -1160,7 +982,7 @@ export default class DialogManager extends ManagedObject {
 				contentHeight: "600px",
 				busyIndicatorDelay: 0,
 				draggable: true,
-				initialFocus: searchInput
+				initialFocus: searchInput,
 			});
 
 			const updateDialogTitle = () => {
@@ -1169,7 +991,6 @@ export default class DialogManager extends ManagedObject {
 				dialog.setTitle(`Saved Projects (${filteredLength})`);
 			};
 
-			
 			const toolbar = new Toolbar({
 				content: [searchInput, new ToolbarSpacer()],
 			});
@@ -1179,7 +1000,7 @@ export default class DialogManager extends ManagedObject {
 			const table = new Table({
 				columns: [
 					new Column({ header: new Label({ text: "Project Name" }) }),
-					new Column({ header: new Label({ text: "Actions" }), hAlign: "End" })
+					new Column({ header: new Label({ text: "Actions" }), hAlign: "End" }),
 				],
 				growing: true,
 				growingThreshold: 100,
@@ -1201,12 +1022,13 @@ export default class DialogManager extends ManagedObject {
 									press: (event: Button$PressEvent) => {
 										const source = event.getSource();
 										const listItem = source.getParent() as ColumnListItem;
-										const bindingContext = listItem.getBindingContext("projects");
+										const bindingContext =
+											listItem.getBindingContext("projects");
 										if (!bindingContext) {
 											return;
 										}
 										const project = bindingContext.getObject() as Project;
-										
+
 										void DialogManager.showConfirmationDialog(
 											`Are you sure you want to delete project "${project.ProjectName}"?`
 										).then(async (confirmed) => {
@@ -1215,29 +1037,38 @@ export default class DialogManager extends ManagedObject {
 												try {
 													await this.requests.deleteProject(project);
 													MessageToast.show("Project deleted successfully");
-													
+
 													// Remove from table
-													const model = dialog.getModel("projects") as JSONModel;
+													const model = dialog.getModel(
+														"projects"
+													) as JSONModel;
 													const projects = model.getProperty("/") as Project[];
-													const index = projects.findIndex(p => p.ProjectName === project.ProjectName);
+													const index = projects.findIndex(
+														(p) => p.ProjectName === project.ProjectName
+													);
 													if (index > -1) {
 														projects.splice(index, 1);
 														model.setProperty("/", projects);
 													}
 													updateDialogTitle();
 												} catch (error: unknown) {
-													const errorMessage = error instanceof Error ? error.message : String(error);
-													MessageBox.error(`Error deleting project: ${errorMessage}`);
+													const errorMessage =
+														error instanceof Error
+															? error.message
+															: String(error);
+													MessageBox.error(
+														`Error deleting project: ${errorMessage}`
+													);
 												} finally {
 													dialog.setBusy(false);
 												}
 											}
 										});
-									}
-								})
+									},
+								}),
 							],
-							justifyContent: "End"
-						})
+							justifyContent: "End",
+						}),
 					],
 				}),
 			});
@@ -1297,7 +1128,7 @@ export default class DialogManager extends ManagedObject {
 				resolve(projectName);
 				dialog.close();
 				dialog.destroy();
-			}
+			};
 
 			const input = new Input({
 				placeholder: "Enter project name...",
@@ -1310,10 +1141,7 @@ export default class DialogManager extends ManagedObject {
 				contentWidth: "400px",
 				content: [
 					new VBox({
-						items: [
-							new Label({ text: "Project Name" }),
-							input,
-						],
+						items: [new Label({ text: "Project Name" }), input],
 					}).addStyleClass("sapUiSmallMargin"),
 				],
 				initialFocus: input,

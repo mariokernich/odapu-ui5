@@ -1,0 +1,84 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+>
+    <Dialog
+        title="Choose type"
+        draggable="true"
+        initialFocus="idODataGenericTile"
+        class="sapUiContentPadding"
+    >
+        <content>
+            <VBox
+                width="100%"
+                height="100%"
+                fitContainer="true"
+            >
+                <Text
+                    text="Please select the type of project you want to create"
+                    class="sapUiSmallMarginBottom"
+                />
+                <HBox
+                    justifyContent="SpaceBetween"
+                    class="sapUiSmallMarginTop"
+                >
+                    <GenericTile
+                        header="OData"
+                        subheader="RAP Service, SEGW Project"
+                        frameType="OneByOne"
+                        press=".onSelectOData"
+                        class="sapUiTinyMarginEnd"
+                        id="idODataGenericTile"
+                    >
+                        <tileContent>
+                            <TileContent>
+                                <content>
+                                    <VBox>
+                                        <core:Icon
+                                            src="sap-icon://add-activity"
+                                            size="2rem"
+                                        />
+                                    </VBox>
+                                </content>
+                            </TileContent>
+                        </tileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        header="APC"
+                        subheader="ABAP Push Channel"
+                        frameType="OneByOne"
+                        press=".onSelectAPC"
+                        class="sapUiTinyMarginBegin"
+                    >
+                        <tileContent>
+                            <TileContent>
+                                <content>
+                                    <VBox>
+                                        <core:Icon
+                                            src="sap-icon://add-activity"
+                                            size="2rem"
+                                        />
+                                    </VBox>
+                                </content>
+                            </TileContent>
+                        </tileContent>
+                    </GenericTile>
+                </HBox>
+            </VBox>
+        </content>
+        <buttons>
+            <Button
+                text="About"
+                icon="sap-icon://information"
+                press=".onShowAbout"
+            />
+            <Button
+                text="Cancel"
+                icon="sap-icon://decline"
+                press=".onCancel"
+                type="Ghost"
+            />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition> 

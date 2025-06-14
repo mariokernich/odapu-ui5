@@ -1,0 +1,42 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:codeeditor="sap.ui.codeeditor"
+>
+    <Dialog
+        title="Metadata"
+        contentHeight="100%"
+        contentWidth="100%"
+    >
+        <content>
+            <VBox
+                width="100%"
+                height="100%"
+                fitContainer="true"
+            >
+                <codeeditor:CodeEditor
+                    editable="false"
+                    type="xml"
+                    value="{dialog>/xml}"
+                    width="100%"
+                    height="100%"
+                    maxLines="1000"
+                    syntaxHints="false"
+                />
+            </VBox>
+        </content>
+        <buttons>
+            <Button
+                text="Copy"
+                icon="sap-icon://copy"
+                press=".onCopy"
+            />
+            <Button
+                text="Close"
+                icon="sap-icon://decline"
+                press=".onClose"
+                type="Ghost"
+            />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition> 
