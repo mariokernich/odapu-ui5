@@ -1,5 +1,4 @@
 import BaseController from "./BaseController";
-import DialogManager from "../util/DialogManager";
 import TabContainer from "sap/m/TabContainer";
 import TabContainerItem from "sap/m/TabContainerItem";
 import Fragment from "sap/ui/core/Fragment";
