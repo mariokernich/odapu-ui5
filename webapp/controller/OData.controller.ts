@@ -698,6 +698,8 @@ export default class OData extends BaseController {
 			});
 
 			this.localData.response = JSON.stringify(response, null, 2);
+
+			MessageToast.show(this.component.getText("msg.functionExecuted"));
 		} finally {
 			this.setBusy(false);
 		}
