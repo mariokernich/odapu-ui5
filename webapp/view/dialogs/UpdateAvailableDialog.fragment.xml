@@ -12,15 +12,13 @@
                     <Text
                         text="{i18n>msg.newVersionAvailable}"
                         wrapping="true"
-                        class="sapThemeFontSizeLarge" />
-                    <HBox class="sapUiSmallMarginBottom">
-                        <Text
-                            text="{i18n>msg.currentVersion}: {dialog>/currentVersion}"
-                            wrapping="true"
+                        class="sapUiTinyMarginBottom" />
+                    <HBox>
+                        <FormattedText
+                            htmlText="{i18n>msg.currentVersion}: {dialog>/currentVersion}"
                             class="sapUiTinyMarginEnd" />
-                        <Text
-                            text="{i18n>msg.latestVersion}: {dialog>/latestVersion}"
-                            wrapping="true"
+                        <FormattedText
+                            htmlText="{i18n>msg.latestVersion}: {dialog>/latestVersion}"
                             class="sapUiTinyMarginBegin" />
                     </HBox>
                 </VBox>
