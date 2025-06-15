@@ -2,22 +2,22 @@
     xmlns="sap.m"
     xmlns:core="sap.ui.core">
     <Dialog
-        title="Update Available"
+        title="{i18n>dlg.title.updateAvailable}"
         contentWidth="400px"
         draggable="true">
         <content>
             <VBox class="sapUiSmallMargin" alignItems="Center">
                 <VBox alignItems="Center" class="sapUiSmallMarginBottom">
                     <Text
-                        text="A new version is available!"
+                        text="{i18n>msg.newVersionAvailable}"
                         wrapping="true"
                         class="sapThemeFontSizeLarge" />
                     <Text
-                        text="Current Version: {dialog>/currentVersion}"
+                        text="{i18n>msg.currentVersion}: {dialog>/currentVersion}"
                         wrapping="true"
                         class="sapUiTinyMarginTop" />
                     <Text
-                        text="Latest Version: {dialog>/latestVersion}"
+                        text="{i18n>msg.latestVersion}: {dialog>/latestVersion}"
                         wrapping="true"
                         class="sapUiTinyMarginTop" />
                 </VBox>
@@ -28,12 +28,12 @@
         </content>
         <buttons>
             <Button
-                text="Get Update"
+                text="{i18n>btn.getUpdate}"
                 type="Emphasized"
                 icon="sap-icon://chain-link"
                 press="onGetUpdate" />
             <Button
-                text="Close"
+                text="{i18n>btn.close}"
                 type="Ghost"
                 icon="sap-icon://decline"
                 press="onClose" />

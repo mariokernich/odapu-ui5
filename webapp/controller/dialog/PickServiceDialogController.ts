@@ -8,103 +8,141 @@ import ListBinding from "sap/ui/model/ListBinding";
 import Table from "sap/m/Table";
 import MessageToast from "sap/m/MessageToast";
 import Context from "sap/ui/model/odata/v2/Context";
+import JSONModel from "sap/ui/model/json/JSONModel";
+import { Button$PressEvent } from "sap/m/Button";
 
 /**
  * @namespace de.kernich.odpu.controller.dialog
  */
 export default class PickServiceDialogController extends DialogController {
-    data = {
-        services: [] as ServiceEntity[],
-        odataTypes: [
-            { key: "ALL", text: "All" },
-            { key: "2", text: "2" },
-            { key: "4", text: "4" }
-        ],
-        searchQuery: "",
-        selectedODataType: "ALL",
-        selectedService: null as ServiceEntity | null
-    };
+	data = {
+		services: [] as ServiceEntity[],
+		odataTypes: [
+			{ key: "ALL", text: "All" },
+			{ key: "2", text: "2" },
+			{ key: "4", text: "4" },
+		],
+		searchQuery: "",
+		selectedODataType: "ALL",
+		selectedService: null as ServiceEntity | null,
+	};
 
-    onSearch(event: SearchField$LiveChangeEvent) {
-        const query = event.getParameter("newValue")?.toLowerCase() ?? "";
-        this.data.searchQuery = query;
-        this.applyFilters();
-    }
+	onSearch(event: SearchField$LiveChangeEvent) {
+		const query = event.getParameter("newValue")?.toLowerCase() ?? "";
+		const table = this.getElement<Table>("idServicesTable");
+		const binding = table.getBinding("items") as ListBinding;
 
-    onODataTypeChange(event: Select$ChangeEvent) {
-        const selectedKey = event.getParameter("selectedItem")?.getKey() ?? "ALL";
-        this.data.selectedODataType = selectedKey;
-        this.applyFilters();
-    }
+		binding.filter(
+			query
+				? new Filter({
+						filters: [
+							new Filter("ServiceName", FilterOperator.Contains, query),
+							new Filter("ServicePath", FilterOperator.Contains, query),
+						],
+						and: false,
+				  })
+				: []
+		);
 
-    async onRefresh() {
-        this.dialog.setBusy(true);
-        try {
-            const updatedServices = await this.requests.getServices();
-            this.data.services = updatedServices;
-            this.dialog.setTitle(`Select Service (${updatedServices.length})`);
-            MessageToast.show("Services refreshed");
-        } finally {
-            this.dialog.setBusy(false);
-        }
-    }
+		const filteredLength = binding ? binding.getLength() : 0;
+		this.dialog.setTitle(`Select Service (${filteredLength})`);
+	}
 
-    onChoose() {
-        const table = this.getElement<Table>("idServiceTable");
-        const selectedItem = table.getSelectedItem();
+	onODataTypeChange(event: Select$ChangeEvent) {
+		const selectedKey = event.getParameter("selectedItem")?.getKey() ?? "ALL";
+		this.data.selectedODataType = selectedKey;
+		this.applyFilters();
+	}
 
-        if (!selectedItem) {
-            MessageToast.show("Please select a service.");
-            return;
-        }
+	onRefresh() {
+		void this.handleRefresh();
+	}
 
-        const bindingContext = selectedItem.getBindingContext("dialog") as Context;
-        const service = bindingContext.getObject() as ServiceEntity;
-        this.data.selectedService = service;
-        this.onConfirm();
-    }
+	async handleRefresh() {
+		const model = this.getModel("dialog") as JSONModel;
+		const services = await this.requests.getServices();
+		model.setProperty("/services", services);
+		MessageToast.show(this.getText("msg.servicesRefreshed"));
+	}
 
-    async onCustomService() {
-        try {
-            const service = await this.dialogManager.pickCustomService();
-            this.data.selectedService = service;
-            this.onConfirm();
-        } catch {
-            // Ignore error as it's handled in pickCustomService
-        }
-    }
+	onChoose() {
+		const table = this.getElement<Table>("idServicesTable");
+		const selectedItem = table.getSelectedItem();
 
-    private applyFilters() {
-        const table = this.getElement<Table>("idServiceTable");
-        const binding = table.getBinding("items") as ListBinding;
-        const filters: Filter[] = [];
+		if (!selectedItem) {
+			MessageToast.show(this.getText("msg.selectService"));
+			return;
+		}
 
-        // Add search filter if query exists
-        if (this.data.searchQuery) {
-            filters.push(
-                new Filter({
-                    filters: [
-                        new Filter("ServiceName", FilterOperator.Contains, this.data.searchQuery),
-                        new Filter("ServicePath", FilterOperator.Contains, this.data.searchQuery),
-                    ],
-                    and: false,
-                })
-            );
-        }
+		const bindingContext = selectedItem.getBindingContext("dialog") as Context;
+		const service = bindingContext.getObject() as ServiceEntity;
+		this.data.selectedService = service;
+		this.onConfirm();
+	}
 
-        // Add OData type filter if not ALL
-        if (this.data.selectedODataType !== "ALL") {
-            filters.push(
-                new Filter("ODataType", FilterOperator.EQ, this.data.selectedODataType)
-            );
-        }
+	async onCustomService() {
+		try {
+			const service = await this.dialogManager.pickCustomService();
+			this.data.selectedService = service;
+			this.onConfirm();
+		} catch {
+			// Ignore error as it's handled in pickCustomService
+		}
+	}
 
-        // Apply combined filters
-        binding.filter(
-            filters.length > 0 ? new Filter({ filters: filters, and: true }) : []
-        );
+	private applyFilters() {
+		const table = this.getElement<Table>("idServicesTable");
+		const binding = table.getBinding("items") as ListBinding;
+		const filters: Filter[] = [];
 
-        const filteredLength = binding ? binding.getLength() : 0;
-        this.dialog.setTitle(`Select Service (${filteredLength})`);
-    }
+		// Add search filter if query exists
+		if (this.data.searchQuery) {
+			filters.push(
+				new Filter(
+					"ServiceName",
+					FilterOperator.Contains,
+					this.data.searchQuery
+				),
+				new Filter(
+					"ServicePath",
+					FilterOperator.Contains,
+					this.data.searchQuery
+				)
+			);
+		}
+
+		// Add OData type filter if not ALL
+		if (this.data.selectedODataType !== "ALL") {
+			filters.push(
+				new Filter("ODataType", FilterOperator.EQ, this.data.selectedODataType)
+			);
+		}
+
+		// Apply combined filters
+		binding.filter(
+			filters.length > 0 ? new Filter({ filters: filters, and: true }) : []
+		);
+
+		const filteredLength = binding ? binding.getLength() : 0;
+		this.dialog.setTitle(`Select Service (${filteredLength})`);
+	}
+
+	onFavorite(isFavorite: boolean, event: Button$PressEvent) {
+		const binding = event.getSource().getBindingContext("dialog") as Context;
+		const service = binding.getObject() as ServiceEntity;
+		void this.handleFavorite(service, isFavorite);
+	}
+
+	async handleFavorite(service: ServiceEntity, isFavorite: boolean) {
+		this.dialog.setBusy(true);
+		try {
+			await this.requests.markAsFavorite({
+				servicePath: service.ServicePath,
+				isFavorite: isFavorite,
+			});
+			await this.handleRefresh();
+		} finally {
+			this.dialog.setBusy(false);
+		}
+	}
 }

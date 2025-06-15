@@ -2,12 +2,12 @@
     xmlns="sap.m"
     xmlns:core="sap.ui.core">
     <Dialog
-        title="Add Filter"
+        title="{i18n>dlg.title.addFilter}"
         contentWidth="400px"
         draggable="true">
         <content>
             <VBox class="sapUiSmallMargin">
-                <Label text="Property" />
+                <Label text="{i18n>lbl.property}" />
                 <Select
                     id="idPropertiesSelect"
                     width="100%"
@@ -19,7 +19,7 @@
                             text="{dialog>text}" />
                     </items>
                 </Select>
-                <Label text="Operator" />
+                <Label text="{i18n>lbl.operator}" />
                 <Select
                     id="idOperatorsSelect"
                     width="100%"
@@ -31,22 +31,23 @@
                             text="{dialog>text}" />
                     </items>
                 </Select>
-                <Label text="Value" />
+                <Label text="{i18n>lbl.value}" />
                 <Input
                     id="idValueInput"
                     width="100%"
                     value="{dialog>/selectedValue}"
+                    placeholder="{i18n>ph.enterValue}"
                     submit="onConfirm" />
             </VBox>
         </content>
         <buttons>
             <Button
-                text="Save"
+                text="{i18n>btn.save}"
                 type="Emphasized"
                 icon="sap-icon://accept"
                 press="onConfirm" />
             <Button
-                text="Cancel"
+                text="{i18n>btn.cancel}"
                 type="Ghost"
                 icon="sap-icon://decline"
                 press="onCancel" />

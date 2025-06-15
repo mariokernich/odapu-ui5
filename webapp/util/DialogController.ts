@@ -6,6 +6,7 @@ import BaseObject from "sap/ui/base/Object";
 import DialogManager from "./DialogManager";
 import ODataRequests from "./ODataRequests";
 import Control from "sap/ui/core/Control";
+import ResourceBundle from "sap/base/i18n/ResourceBundle";
 
 type PromiseHelper<T> = {
     promise: Promise<T>;
@@ -48,14 +49,15 @@ class DialogController extends BaseObject {
     private _dialog!: Dialog;
     private _dialogManager!: DialogManager;
     private _requests!: ODataRequests;
+    private bundle!: ResourceBundle;
     
     async init(options: {
         path: string;
         name: string;
         id: string;
-        models?: { [key: string]: Model };
         dialogManager: DialogManager;
         requests: ODataRequests;
+        bundle: ResourceBundle
     }) {
         return Promise.all([this.initDialog(options), this.initPromise()]);
     }
@@ -72,17 +74,15 @@ class DialogController extends BaseObject {
         path: string;
         name: string;
         id: string;
-        models?: { [key: string]: Model };
         dialogManager: DialogManager;
         requests: ODataRequests;
+        bundle: ResourceBundle;
     }): Promise<Dialog> {
         let dialog = this.dialog;
 
         this.dialogId = options.id;
 
         if (!dialog) {
-            const reqOptions = Object.assign({}, options, { models: {} });
-            const models = Object.entries(reqOptions.models);
 
             this.dialogName = options.name;
             dialog = await this.createDialogFromFragment({
@@ -94,12 +94,10 @@ class DialogController extends BaseObject {
             this.dialog = dialog;
             this.dialogManager = options.dialogManager;
             this.requests = options.requests;
+            this.bundle = options.bundle;
             const dialogModel = new JSONModel(this.data, true);
 
             this.setModel(dialogModel, "dialog");
-            models.forEach(([name, value]) => {
-                this.setModel(value, name === "undefined" ? undefined : name);
-            });
 
             dialog.setBusyIndicatorDelay(0);
         }
@@ -115,6 +113,10 @@ class DialogController extends BaseObject {
         }
 
         return el;
+    }
+
+    public getText(key: string): string {
+        return this.bundle.getText(key) ?? key;
     }
 
     private async createDialogFromFragment(options: {

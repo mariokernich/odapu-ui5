@@ -140,7 +140,7 @@ export default class OData extends BaseController {
 		this.setBusy(false);
 
 		if (!Device.support.websocket) {
-			MessageToast.show("Note: WebSocket not supported");
+			MessageToast.show(this.component.getText("msg.websocketNotSupported"));
 		}
 	}
 
@@ -230,6 +230,7 @@ export default class OData extends BaseController {
 	 */
 	public onShowMetadata() {
 		const xml = this.odataClient?.getMetadataText();
+		if (!xml) return;
 		void this.component.dialogManager.showXmlCodeEditor(xml);
 	}
 
@@ -291,7 +292,7 @@ export default class OData extends BaseController {
 					this.odataClient = new OData4Client(service.ServicePath);
 					break;
 				default:
-					MessageToast.show("Service Type not supported");
+					MessageToast.show(this.component.getText("msg.serviceTypeNotSupported"));
 					break;
 			}
 
@@ -434,7 +435,7 @@ export default class OData extends BaseController {
 				}
 			);
 			this.localData.response = "";
-			MessageToast.show("Entity created");
+			MessageToast.show(this.component.getText("msg.entityCreated"));
 		} catch (error) {
 			MessageBox.error((error as Error).toString());
 		} finally {
@@ -454,8 +455,7 @@ export default class OData extends BaseController {
 				Object.values(properties.keyProperties).some((value) => value === "")
 			) {
 				MessageBox.error(
-					"Please enter value for key properties: " +
-						Object.keys(properties.keyProperties).join(", ")
+					this.component.getText("msg.enterKeyProperties", [Object.keys(properties.keyProperties).join(", ")])
 				);
 				this.setBusy(false);
 				return;
@@ -469,7 +469,7 @@ export default class OData extends BaseController {
 				}
 			);
 			this.localData.response = "";
-			MessageToast.show("Entity deleted");
+			MessageToast.show(this.component.getText("msg.entityDeleted"));
 		} finally {
 			this.setBusy(false);
 		}
@@ -491,8 +491,7 @@ export default class OData extends BaseController {
 					(key) => properties.keyProperties[key] === ""
 				);
 				MessageBox.error(
-					"Please enter value for key properties: " +
-						emptyKeyProperties.join(", ")
+					this.component.getText("msg.enterKeyProperties", [emptyKeyProperties.join(", ")])
 				);
 				this.setBusy(false);
 				return;
@@ -723,7 +722,7 @@ export default class OData extends BaseController {
 			(e) => e.name === this.localData.selectedEntityName
 		);
 		if (!entity) {
-			MessageBox.error("Entity not found");
+			MessageBox.error(this.component.getText("msg.entityNotFound"));
 			return;
 		}
 		const filter = await this.component.dialogManager.addFilter(
@@ -740,7 +739,7 @@ export default class OData extends BaseController {
 				f.value === filter.value
 		);
 		if (conflict) {
-			MessageBox.error("Conflict with existing record");
+			MessageBox.error(this.component.getText("msg.filterConflict"));
 			return;
 		}
 
@@ -759,7 +758,7 @@ export default class OData extends BaseController {
 		const existingHeader = headers.find((h) => h.key === header.key);
 		if (existingHeader) {
 			MessageBox.error(
-				`Header with key ${header.key} already exists. Please use a different key.`
+				this.component.getText("msg.headerExists", [header.key])
 			);
 		} else {
 			headers.push({
@@ -782,7 +781,7 @@ export default class OData extends BaseController {
 
 		const submit = () => {
 			if (valueInput.getValue() === "") {
-				MessageToast.show("Please enter a value.");
+				MessageToast.show(this.component.getText("msg.enterValue"));
 				return;
 			}
 			const index = headers.findIndex((header) => header.key === obj.key);
@@ -872,7 +871,7 @@ export default class OData extends BaseController {
 		if (response) {
 			Util.download(response, "response.json");
 		} else {
-			MessageToast.show("No response to download");
+			MessageToast.show(this.component.getText("msg.noResponseToDownload"));
 		}
 	}
 
@@ -880,9 +879,9 @@ export default class OData extends BaseController {
 		const response = this.localData.response;
 		if (response) {
 			await Util.copy2Clipboard(response);
-			MessageToast.show("Response copied to clipboard");
+			MessageToast.show(this.component.getText("msg.responseCopied"));
 		} else {
-			MessageToast.show("No response to copy");
+			MessageToast.show(this.component.getText("msg.noResponseToCopy"));
 		}
 	}
 
@@ -1038,7 +1037,7 @@ export default class OData extends BaseController {
 
 		const conflict = sorting.find((s) => s.property === sort.property);
 		if (conflict) {
-			MessageBox.error("Property already sorted");
+			MessageBox.error(this.component.getText("msg.propertyAlreadySorted"));
 			return;
 		}
 
@@ -1111,7 +1110,7 @@ export default class OData extends BaseController {
 			} as Project;
 
 			await this.component.requests.createProject(project);
-			MessageToast.show("Configuration saved successfully");
+			MessageToast.show(this.component.getText("msg.configurationSaved"));
 		} finally {
 			this.setBusy(false);
 		}
@@ -1168,7 +1167,7 @@ export default class OData extends BaseController {
 					JSON.parse(selectedProject.Headers)
 				);
 
-				MessageToast.show("Configuration loaded successfully");
+				MessageToast.show(this.component.getText("msg.configurationLoaded"));
 			}
 		} catch (error) {
 			if (error instanceof Error && error.message !== "Dialog closed") {

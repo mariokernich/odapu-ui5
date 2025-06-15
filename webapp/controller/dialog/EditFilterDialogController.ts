@@ -26,10 +26,4 @@ export default class EditFilterDialogController extends DialogController {
         selectedOperator: FilterOperator.Contains,
         selectedValue: ""
     };
-
-    public setFilter(filter: FilterRecord): void {
-        this.data.selectedProperty = filter.property;
-        this.data.selectedOperator = filter.operator;
-        this.data.selectedValue = filter.value;
-    }
 } 

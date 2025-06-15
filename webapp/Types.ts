@@ -5,6 +5,7 @@ export type ServiceEntity = {
 	ODataType: "2" | "4";
 	ServicePath: string;
 	Version: string;
+	IsFavorite: boolean;
 };
 
 export type PushChannelEntity = {

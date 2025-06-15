@@ -90,4 +90,22 @@ export default class ODataRequests extends ManagedObject {
 			});
 		});
 	}
+
+	async markAsFavorite(options: {
+		servicePath: string;
+		isFavorite: boolean;
+	}): Promise<void> {
+		return new Promise((resolve, reject) => {
+			this.model.callFunction("/mark_favorite", {
+				success: () => resolve(),
+				error: reject,
+				urlParameters: {
+					ProjectName: "",
+					ServicePath: options.servicePath,
+					Value: options.isFavorite,
+				},
+				method: "POST",
+			});
+		});
+	}
 }

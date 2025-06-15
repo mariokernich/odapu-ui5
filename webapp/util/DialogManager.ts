@@ -10,7 +10,7 @@ import {
 import ManagedObject from "sap/ui/base/ManagedObject";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import Util from "./Util";
-import Component from "sap/ui/core/Component";
+import Component from "../Component";
 import ODataRequests from "./ODataRequests";
 import ODataModel from "sap/ui/model/odata/v2/ODataModel";
 import DialogController from "./DialogController";
@@ -165,7 +165,9 @@ export default class DialogManager extends ManagedObject {
 			)
 			.map((p) => ({ key: p.name, text: p.name })));
 
-		(controller as EditFilterDialogController).setFilter(filter);
+		model.setProperty("/selectedProperty", filter.property);
+		model.setProperty("/selectedOperator", filter.operator);
+		model.setProperty("/selectedValue", filter.value);
 
 		dialog.open();
 		const result = await promise;
@@ -185,9 +187,7 @@ export default class DialogManager extends ManagedObject {
 		});
 
 		const model = controller.getModel("dialog") as JSONModel;
-		model.setData({
-			message: message
-		});
+		model.setProperty("/message", message);
 
 		dialog.open();
 		const result = await promise;
@@ -204,11 +204,9 @@ export default class DialogManager extends ManagedObject {
 		});
 
 		const model = controller.getModel("dialog") as JSONModel;
-		model.setData({
-			currentVersion: infoEntity.Version,
-			latestVersion: infoEntity.RemoteVersion,
-			releaseNotes: infoEntity.LatestReleaseBody || "No release notes available."
-		});
+		model.setProperty("/currentVersion", infoEntity.Version);
+		model.setProperty("/latestVersion", infoEntity.RemoteVersion);
+		model.setProperty("/releaseNotes", infoEntity.LatestReleaseBody || "No release notes available.");
 
 		dialog.open();
 	}
@@ -223,12 +221,10 @@ export default class DialogManager extends ManagedObject {
 		})
 
 		const model = controller.getModel("dialog") as JSONModel;
-		model.setData({
-			Version: infoEntity.Version,
-			RemoteVersion: infoEntity.RemoteVersion,
-			UpdateAvailable: infoEntity.UpdateAvailable,
-			Logo: sap.ui.require.toUrl("de/kernich/odpu/img/odapu-logo.png"),
-		})
+		model.setProperty("/Version", infoEntity.Version);
+		model.setProperty("/RemoteVersion", infoEntity.RemoteVersion);
+		model.setProperty("/UpdateAvailable", infoEntity.UpdateAvailable);
+		model.setProperty("/Logo", sap.ui.require.toUrl("de/kernich/odpu/img/odapu-logo.png"));
 
 		dialog.open();
 
@@ -279,9 +275,7 @@ export default class DialogManager extends ManagedObject {
 		})
 
 		const model = controller.getModel("dialog") as JSONModel;
-		model.setData({
-			xml: Util.formatXml(xml)
-		})
+		model.setProperty("/xml", Util.formatXml(xml));
 
 		dialog.open();
 		return promise;
@@ -341,16 +335,16 @@ export default class DialogManager extends ManagedObject {
         await controller.init({
             path: this.fragmentPath + "/" + options.fragmentName,
             name: dialogName,
-            models: {
-				info: infoModel,
-				i18n: i18nModel
-			},
             id: dialogId,
 			dialogManager: this,
-			requests: this.requests
+			requests: this.requests,
+			bundle: this.component.bundle
         });
 
 		const promiseHelper = await controller.initPromise();
+
+		controller.dialog.setModel(i18nModel, "i18n");
+		controller.dialog.setModel(infoModel, "info");
 
         return {
             controller: controller,

@@ -2,16 +2,18 @@
     xmlns="sap.m"
     xmlns:core="sap.ui.core">
     <Dialog
-        title="Saved Projects"
+        title="{i18n>dlg.title.savedProjects}"
         contentWidth="400px"
         contentHeight="600px"
-        draggable="true">
+        draggable="true"
+        initialFocus="idProjectSearchField">
         <content>
             <Toolbar>
                 <SearchField
-                    placeholder="Search Projects"
+                    placeholder="{i18n>ph.searchProjects}..."
                     liveChange="onSearch"
-                    width="100%" />
+                    width="100%" 
+                    id="idProjectSearchField" />
                 <ToolbarSpacer />
             </Toolbar>
             <Table
@@ -20,13 +22,13 @@
                 mode="SingleSelectMaster"
                 growing="true"
                 growingThreshold="100"
-                noDataText="No projects found">
+                noDataText="{i18n>msg.noProjectsFound}">
                 <columns>
                     <Column>
-                        <Label text="Project Name" />
+                        <Label text="{i18n>lbl.projectName}" />
                     </Column>
                     <Column hAlign="End">
-                        <Label text="Actions" />
+                        <Label text="{i18n>lbl.actions}" />
                     </Column>
                 </columns>
                 <items>
@@ -46,12 +48,12 @@
         </content>
         <buttons>
             <Button
-                text="Load"
+                text="{i18n>btn.load}"
                 type="Emphasized"
                 icon="sap-icon://accept"
                 press="onLoad" />
             <Button
-                text="Cancel"
+                text="{i18n>btn.cancel}"
                 type="Ghost"
                 icon="sap-icon://decline"
                 press="onCancel" />

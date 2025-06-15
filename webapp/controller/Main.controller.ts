@@ -30,7 +30,7 @@ export default class Main extends BaseController {
 		await this.loadInfo();
 
 		const item = new TabContainerItem({
-			name: "Untitled",
+			name: this.getOwnerComponent().getText("app.untitled"),
 			additionalText: "ODATA",
 			modified: false,
 		});
@@ -77,7 +77,7 @@ export default class Main extends BaseController {
 			this.getOwnerComponent().setModel(new JSONModel(info), "info");
 
 			if(info.UpdateAvailable) {
-				this.getOwnerComponent().dialogManager.showUpdateAvailableDialog();
+				void this.getOwnerComponent().dialogManager.showUpdateAvailableDialog();
 			}
 		} finally {
 			this.setBusy(false);
@@ -96,7 +96,7 @@ export default class Main extends BaseController {
 		const tabContainer = this.getTabContainer();
 
 		const item = new TabContainerItem({
-			name: "Untitled",
+			name: this.getOwnerComponent().getText("app.untitled"),
 			additionalText: projectType,
 			modified: false,
 		});

@@ -2,16 +2,16 @@
     xmlns="sap.m"
     xmlns:core="sap.ui.core">
     <Dialog
-        title="Save Project"
+        title="{i18n>dlg.title.saveProject}"
         contentWidth="400px"
         initialFocus="idProjectNameInput"
         draggable="true">
         <content>
             <VBox class="sapUiSmallMargin">
-                <Label text="Project Name" />
+                <Label text="{i18n>lbl.projectName}" />
                 <Input
                     id="idProjectNameInput"
-                    placeholder="Enter project name..."
+                    placeholder="{i18n>ph.enterProjectName}"
                     width="100%"
                     value="{dialog>/projectName}"
                     submit="onSave" />
@@ -19,12 +19,12 @@
         </content>
         <buttons>
             <Button
-                text="Save"
+                text="{i18n>btn.save}"
                 type="Emphasized"
                 icon="sap-icon://accept"
                 press="onSave" />
             <Button
-                text="Cancel"
+                text="{i18n>btn.cancel}"
                 type="Ghost"
                 icon="sap-icon://decline"
                 press="onCancel" />

@@ -13,4 +13,8 @@ export default class XmlCodeDialogController extends DialogController {
         void Util.copy2Clipboard(this.data.xml);
         MessageToast.show("Copied to clipboard");
     }
+
+    onDownload() {
+        void Util.download(this.data.xml, "metadata.xml");
+    }
 }

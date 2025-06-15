@@ -3,11 +3,12 @@
     xmlns:core="sap.ui.core"
 >
     <Dialog
-        title="Choose type"
+        title="{i18n>dlg.title.selectProjectType}"
         draggable="true"
         initialFocus="idODataGenericTile"
         class="sapUiContentPadding"
         busyIndicatorDelay="0"
+        contentWidth="400px"
     >
         <content>
             <VBox
@@ -16,15 +17,15 @@
                 fitContainer="true"
             >
                 <Text
-                    text="Please select the type of project you want to create"
+                    text="{i18n>msg.selectProjectType}"
                 />
                 <HBox
                     justifyContent="SpaceBetween"
                     class="sapUiSmallMarginTop"
                 >
                     <GenericTile
-                        header="OData"
-                        subheader="RAP Service, SEGW Project"
+                        header="{i18n>lbl.odata}"
+                        subheader="{i18n>lbl.odataSubheader}"
                         frameType="OneByOne"
                         press=".onSelectOData"
                         class="sapUiTinyMarginEnd"
@@ -43,10 +44,9 @@
                             </TileContent>
                         </tileContent>
                     </GenericTile>
-
                     <GenericTile
-                        header="APC"
-                        subheader="ABAP Push Channel"
+                        header="{i18n>lbl.apc}"
+                        subheader="{i18n>lbl.apcSubheader}"
                         frameType="OneByOne"
                         press=".onSelectAPC"
                         class="sapUiTinyMarginBegin"
@@ -69,12 +69,12 @@
         </content>
         <buttons>
             <Button
-                text="About"
+                text="{i18n>btn.about}"
                 icon="sap-icon://information"
                 press=".onShowAbout"
             />
             <Button
-                text="Cancel"
+                text="{i18n>btn.cancel}"
                 icon="sap-icon://decline"
                 press=".onCancel"
             />

@@ -2,7 +2,7 @@
     xmlns="sap.m"
     xmlns:core="sap.ui.core">
     <Dialog
-        title="Add Header"
+        title="{i18n>dlg.title.addHeader}"
         contentWidth="400px"
         draggable="true">
         <content>
@@ -47,12 +47,12 @@
         </content>
         <buttons>
             <Button
-                text="Save"
+                text="{i18n>btn.save}"
                 type="Emphasized"
                 icon="sap-icon://accept"
                 press="onConfirm" />
             <Button
-                text="Cancel"
+                text="{i18n>btn.cancel}"
                 type="Ghost"
                 icon="sap-icon://decline"
                 press="onCancel" />

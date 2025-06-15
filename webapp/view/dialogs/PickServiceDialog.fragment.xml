@@ -1,58 +1,77 @@
 <core:FragmentDefinition
     xmlns="sap.m"
-    xmlns:core="sap.ui.core">
+    xmlns:core="sap.ui.core"
+>
     <Dialog
-        title="Select Service"
+        title="{i18n>dlg.title.selectService}"
         contentWidth="80%"
-        contentHeight="80%">
+        contentHeight="80%"
+    >
         <content>
             <Toolbar>
                 <SearchField
                     width="100%"
-                    placeholder="Search Services"
-                    liveChange="onSearch" />
+                    placeholder="{i18n>ph.searchServices}..."
+                    liveChange="onSearch"
+                />
                 <ToolbarSpacer />
                 <Select
                     width="100px"
                     items="{dialog>/odataTypes}"
                     selectedKey="{dialog>/selectedODataType}"
-                    change="onODataTypeChange">
+                    change="onODataTypeChange"
+                >
                     <items>
                         <core:Item
                             key="{dialog>key}"
-                            text="{dialog>text}" />
+                            text="{dialog>text}"
+                        />
                     </items>
                 </Select>
                 <Button
                     icon="sap-icon://refresh"
                     press="onRefresh"
-                    tooltip="Refresh Services" />
+                    tooltip="{i18n>ttl.refreshServices}"
+                />
             </Toolbar>
             <Table
-                id="idServiceTable"
+                id="idServicesTable"
                 mode="SingleSelectMaster"
                 growing="true"
-                growingThreshold="100"
-                items="{dialog>/services}">
+                growingThreshold="9999"
+                items="{
+                    path: 'dialog>/services',
+                    sorter: {
+                        path: 'IsFavorite',
+                        descending: true
+                    }
+                }"
+                fixedLayout="false"
+            >
                 <columns>
                     <Column>
                         <header>
-                            <Label text="Service Name" />
+                            <Label text="{i18n>lbl.serviceName}" />
                         </header>
                     </Column>
                     <Column>
                         <header>
-                            <Label text="Service Path" />
+                            <Label text="{i18n>lbl.servicePath}" />
                         </header>
                     </Column>
-                    <Column>
+                    <Column width="100px">
                         <header>
-                            <Label text="OData Type" />
+                            <Label text="{i18n>lbl.odataType}" />
                         </header>
                     </Column>
-                    <Column>
+                    <Column width="100px">
                         <header>
-                            <Label text="Version" />
+                            <Label text="{i18n>lbl.version}" />
+                        </header>
+                    </Column>
+                    <Column width="50px">
+                        <header>
+                            <Label text="{i18n>lbl.favorite}" />
                         </header>
                     </Column>
                 </columns>
@@ -63,6 +82,25 @@
                             <Text text="{dialog>ServicePath}" />
                             <Text text="{dialog>ODataType}" />
                             <Text text="{dialog>Version}" />
+                            <HBox
+                                alignItems="End"
+                                justifyContent="End"
+                            >
+                                <Button
+                                    icon="sap-icon://unfavorite"
+                                    type="Transparent"
+                                    press="onFavorite(true, $event)"
+                                    tooltip="Mark as Favorite"
+                                    visible="{= ${dialog>IsFavorite} === false }"
+                                />
+                                <Button
+                                    icon="sap-icon://favorite"
+                                    type="Transparent"
+                                    press="onFavorite(false, $event)"
+                                    tooltip="Unmark as Favorite"
+                                    visible="{= ${dialog>IsFavorite} === true }"
+                                />
+                            </HBox>
                         </cells>
                     </ColumnListItem>
                 </items>
@@ -70,20 +108,23 @@
         </content>
         <buttons>
             <Button
-                text="Choose"
+                text="{i18n>btn.choose}"
                 type="Emphasized"
                 icon="sap-icon://accept"
-                press="onChoose" />
+                press="onChoose"
+            />
             <Button
-                text="Custom Service"
+                text="{i18n>btn.customService}"
                 type="Ghost"
                 icon="sap-icon://add"
-                press="onCustomService" />
+                press="onCustomService"
+            />
             <Button
-                text="Cancel"
+                text="{i18n>btn.cancel}"
                 type="Ghost"
                 icon="sap-icon://decline"
-                press="onCancel" />
+                press="onCancel"
+            />
         </buttons>
     </Dialog>
-</core:FragmentDefinition> 
+</core:FragmentDefinition>

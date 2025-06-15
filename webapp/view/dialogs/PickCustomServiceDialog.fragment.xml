@@ -2,15 +2,15 @@
     xmlns="sap.m"
     xmlns:core="sap.ui.core">
     <Dialog
-        title="Select Custom Service"
-        contentWidth="500px"
-        draggable="true">
+        title="{i18n>dlg.title.selectCustomService}"
+        contentWidth="500px">
         <content>
             <VBox class="sapUiSmallMargin">
+                <Label text="{i18n>lbl.serviceType}" />
                 <SegmentedButton
-                    width="100%"
                     selectedKey="{dialog>/selectedType}"
-                    class="sapUiTinyMarginBottom">
+                    width="100%"
+                    class="sapUiSmallMarginBottom">
                     <items>
                         <SegmentedButtonItem
                             key="2"
@@ -20,21 +20,23 @@
                             text="OData V4" />
                     </items>
                 </SegmentedButton>
+                <Label text="{i18n>lbl.servicePath}" />
                 <Input
+                    id="idServicePathInput"
                     width="100%"
-                    placeholder="Enter service path"
                     value="{dialog>/servicePath}"
-                    submit="onSubmit" />
+                    placeholder="{i18n>ph.enterServicePath}"
+                    submit="onConfirm" />
             </VBox>
         </content>
         <buttons>
             <Button
-                text="Save"
+                text="{i18n>btn.save}"
                 type="Emphasized"
                 icon="sap-icon://accept"
                 press="onConfirm" />
             <Button
-                text="Cancel"
+                text="{i18n>btn.cancel}"
                 type="Ghost"
                 icon="sap-icon://decline"
                 press="onCancel" />

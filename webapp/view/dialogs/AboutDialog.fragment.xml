@@ -86,7 +86,7 @@
         </content>
         <endButton>
             <Button
-                text="Close"
+                text="{i18n>btn.close}"
                 press="onConfirm"
                 type="Ghost"
                 id="idCloseButton"

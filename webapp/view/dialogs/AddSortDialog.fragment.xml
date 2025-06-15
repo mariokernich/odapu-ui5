@@ -2,24 +2,25 @@
     xmlns="sap.m"
     xmlns:core="sap.ui.core">
     <Dialog
-        title="Add Sorter"
+        title="{i18n>dlg.title.addSort}"
         contentWidth="400px"
         draggable="true">
         <content>
             <VBox class="sapUiSmallMargin">
-                <Label text="Property" />
+                <Label text="{i18n>lbl.property}" />
                 <Select
                     id="idPropertiesSelect"
                     width="100%"
                     items="{dialog>/properties}"
-                    selectedKey="{dialog>/selectedProperty}">
+                    selectedKey="{dialog>/selectedProperty}"
+                    class="sapUiSmallMarginBottom">
                     <items>
                         <core:Item
                             key="{dialog>key}"
                             text="{dialog>text}" />
                     </items>
                 </Select>
-                <Label text="Direction" />
+                <Label text="{i18n>lbl.direction}" />
                 <Select
                     id="idDirectionsSelect"
                     width="100%"
@@ -35,12 +36,12 @@
         </content>
         <buttons>
             <Button
-                text="Save"
+                text="{i18n>btn.save}"
                 type="Emphasized"
                 icon="sap-icon://accept"
                 press="onConfirm" />
             <Button
-                text="Cancel"
+                text="{i18n>btn.cancel}"
                 type="Ghost"
                 icon="sap-icon://decline"
                 press="onCancel" />

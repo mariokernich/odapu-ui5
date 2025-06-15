@@ -6,6 +6,8 @@ import Device from "sap/ui/Device";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import { Model$RequestFailedEvent } from "sap/ui/model/Model";
 import MessageBox from "sap/m/MessageBox";
+import ResourceModel from "sap/ui/model/resource/ResourceModel";
+import ResourceBundle from "sap/base/i18n/ResourceBundle";
 
 /**
  * @namespace de.kernich.odpu
@@ -15,11 +17,11 @@ export default class Component extends UIComponent {
 		manifest: "json",
 	};
 
-	private contentDensityClass: string;
-
-	public dialogManager: DialogManager;
-	public model: ODataModel;
-	public requests: ODataRequests;
+	private contentDensityClass = "";
+	public dialogManager!: DialogManager;
+	public model!: ODataModel;
+	public requests!: ODataRequests;
+	public bundle!: ResourceBundle;
 
 	public init(): void {
 		super.init();
@@ -30,7 +32,20 @@ export default class Component extends UIComponent {
 		this.model = this.getModel() as ODataModel;
 		this.requests = new ODataRequests(this.model);
 
-		this.model.attachRequestFailed({}, (event: Model$RequestFailedEvent) => {
+		void this.handleInitAsync();
+	}
+
+	private async handleInitAsync() {
+		this.registerErrorHandler(this.model);
+		this.setIconModel();
+
+		this.bundle = await (this.getModel("i18n") as ResourceModel).getResourceBundle();
+
+		this.getRouter().initialize();
+	}
+
+	private registerErrorHandler(model: ODataModel) {
+		model.attachRequestFailed({}, (event: Model$RequestFailedEvent) => {
 			const parameters = event.getParameters() as {
 				response: {
 					responseText: string;
@@ -69,10 +84,10 @@ export default class Component extends UIComponent {
 				MessageBox.error(json.error.message.value);
 			}
 		});
+	}
 
-		this.setIconModel();
-
-		this.getRouter().initialize();
+	public getText(key: string, args?: string[]) {
+		return this.bundle.getText(key, args) ?? key;
 	}
 
 	private setIconModel() {

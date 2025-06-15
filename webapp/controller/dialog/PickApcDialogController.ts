@@ -43,7 +43,7 @@ export default class PickApcDialogController extends DialogController {
         const selectedItem = table.getSelectedItem();
 
         if (!selectedItem) {
-            MessageToast.show("Please select a push channel.");
+            MessageToast.show(this.getText("msg.selectPushChannel"));
             return;
         }
 
