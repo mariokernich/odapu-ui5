@@ -2,7 +2,6 @@ import ODataModel from "sap/ui/model/odata/v2/ODataModel";
 import BaseController from "./BaseController";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import MessageToast from "sap/m/MessageToast";
-import { PushChannelEntity } from "../Types";
 import Constants from "../Constants";
 import Device from "sap/ui/Device";
 import Control from "sap/ui/core/Control";
@@ -51,9 +50,9 @@ export default class APC extends BaseController {
 		super.onInit();
 		void this.handleInit();
 
-		this.getView().setModel(new JSONModel(this.apcModel, true), "apcModel");
-		this.getView().setModel(new JSONModel(this.apcLog, true), "apcLog");
-		this.getView().setModel(new JSONModel(this.apcView, true), "apcView");
+		this.getView()?.setModel(new JSONModel(this.apcModel, true), "apcModel");
+		this.getView()?.setModel(new JSONModel(this.apcLog, true), "apcLog");
+		this.getView()?.setModel(new JSONModel(this.apcView, true), "apcView");
 	}
 
 	private async handleInit() {
@@ -64,7 +63,7 @@ export default class APC extends BaseController {
 		this.setBusy(false);
 
 		if (!Device.support.websocket) {
-			MessageToast.show("Note: WebSocket not supported");
+			MessageToast.show(this.component.getText("msg.noSocketSupport"));
 		}
 	}
 
@@ -75,7 +74,7 @@ export default class APC extends BaseController {
 	onDisconnectPushChannelButtonPress() {
 		this.socket?.close();
 		this.apcModel.state = "disconnected";
-		MessageToast.show("Disconnected from " + this.apcModel.selectedApc.path);
+		MessageToast.show(this.component.getText("msg.apcDisconnected", [this.apcModel.selectedApc.path]));
 		this.apcModel.selectedApc = {
 			path: "",
 		};
@@ -129,7 +128,7 @@ export default class APC extends BaseController {
 				});
 			});
 			this.focusFeedInput();
-			MessageToast.show("Connected to " + this.apcModel.selectedApc.path);
+			MessageToast.show(this.component.getText("msg.apcConnected", [this.apcModel.selectedApc.path]));
 		} catch (error) {
 			Util.showError(error);
 		} finally {
@@ -146,7 +145,7 @@ export default class APC extends BaseController {
 	}
 
 	public refreshApcLog() {
-		this.getView().getModel("apcLog").refresh();
+		this.getView()?.getModel("apcLog")?.refresh();
 		(this.getById("idLogTable") as Table).refreshAggregation("items");
 	}
 
