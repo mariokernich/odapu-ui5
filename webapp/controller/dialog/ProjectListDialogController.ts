@@ -5,7 +5,6 @@ import Table from "sap/m/Table";
 import Filter from "sap/ui/model/Filter";
 import FilterOperator from "sap/ui/model/FilterOperator";
 import { Project } from "../../Types";
-import { Input$LiveChangeEvent } from "sap/m/Input";
 import ListBinding from "sap/ui/model/ListBinding";
 import ListItem from "sap/ui/core/ListItem";
 import { Button$PressEvent } from "sap/m/Button";
@@ -40,7 +39,7 @@ export default class ProjectListDialogController extends DialogController {
         const selectedItem = table.getSelectedItem();
         
         if (!selectedItem) {
-            MessageToast.show("Please select a project");
+            MessageToast.show(this.getText("msg.selectProject"));
             return;
         }
 
@@ -72,7 +71,7 @@ export default class ProjectListDialogController extends DialogController {
             this.dialog.setBusy(true);
             try {
                 await this.requests.deleteProject(project);
-                MessageToast.show("Project deleted successfully");
+                MessageToast.show(this.getText("msg.projectDeleted"));
 
                 const index = this.data.projects.findIndex(
                     (p) => p.ProjectName === project.ProjectName

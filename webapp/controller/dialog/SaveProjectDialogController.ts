@@ -10,7 +10,7 @@ export default class SaveProjectDialogController extends DialogController {
 	};
 	public onSave(): void {
 		if (!this.data.projectName) {
-			MessageToast.show("Please enter a project name");
+			MessageToast.show(this.getText("msg.enterProjectName"));
 			return;
 		}
 		this.onConfirm();
