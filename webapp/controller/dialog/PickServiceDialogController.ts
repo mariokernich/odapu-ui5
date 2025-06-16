@@ -76,10 +76,15 @@ export default class PickServiceDialogController extends DialogController {
 	}
 
 	async handleRefresh() {
-		const model = this.getModel("dialog") as JSONModel;
-		const services = await this.requests.getServices({ refresh: true });
-		model.setProperty("/services", services);
-		MessageToast.show(this.getText("msg.servicesRefreshed"));
+		this.dialog.setBusy(true);
+		try {
+			const model = this.getModel("dialog") as JSONModel;
+			const services = await this.requests.getServices({ refresh: true });
+			model.setProperty("/services", services);
+			MessageToast.show(this.getText("msg.servicesRefreshed"));
+		} finally {
+			this.dialog.setBusy(false);
+		}
 	}
 
 	onChoose() {

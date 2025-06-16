@@ -2,6 +2,7 @@
     xmlns="sap.m"
     xmlns:core="sap.ui.core"
     xmlns:codeeditor="sap.ui.codeeditor"
+    xmlns:odpu="de.kernich.odpu.control"
 >
     <Dialog
         title="{i18n>dlg.title.metadata}"
@@ -10,18 +11,33 @@
         busyIndicatorDelay="0"
     >
         <content>
-            <VBox
+            <SegmentedButton
                 width="100%"
-                height="100%"
-                fitContainer="true"
+                selectedKey="{dialog>/viewMode}"
             >
+                <items>
+                    <SegmentedButtonItem
+                        text="Code"
+                        key="xml"
+                    />
+                    <SegmentedButtonItem
+                        text="Preview"
+                        key="mermaid"
+                        press="onMermaid"
+                    />
+                </items>
+            </SegmentedButton>
+            <VBox visible="{= ${dialog>/viewMode} === 'xml'}">
                 <codeeditor:CodeEditor
                     editable="false"
                     type="xml"
                     value="{dialog>/xml}"
-                    maxLines="1000"
                     syntaxHints="false"
+                    maxLines="1000"
                 />
+            </VBox>
+            <VBox visible="{= ${dialog>/viewMode} === 'mermaid'}">
+                <odpu:Mermaid />
             </VBox>
         </content>
         <buttons>
@@ -42,4 +58,4 @@
             />
         </buttons>
     </Dialog>
-</core:FragmentDefinition> 
+</core:FragmentDefinition>

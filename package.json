@@ -9,6 +9,12 @@
 		"openui5",
 		"sapui5"
 	],
+	"main": "dist/Component.js",
+	"types": "dist/index.d.ts",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/mariokernich/odapu-ui5.git"
+	},
 	"scripts": {
 		"clean": "rimraf dist coverage",
 		"build": "ui5 build --clean-dest",
@@ -47,6 +53,7 @@
 		"@wdio/mocha-framework": "^8.41.0",
 		"@wdio/spec-reporter": "^8.43.0",
 		"babel-plugin-istanbul": "^7.0.0",
+		"chevrotain": "^11.0.3",
 		"dotenv": "^16.0.3",
 		"eslint": "^9.12.0",
 		"globals": "^15.11.0",
@@ -59,7 +66,16 @@
 		"ui5-middleware-serveframework": "^3.5.0",
 		"ui5-middleware-simpleproxy": "^3.4.1",
 		"ui5-test-runner": "^5.4.3",
+		"ui5-tooling-modules": "^3.27.6",
 		"ui5-tooling-transpile": "^3.5.0",
 		"wdio-ui5-service": "^2.1.1"
+	},
+	"dependencies": {
+		"mermaid": "^11.6.0"
+	},
+	"ui5": {
+		"dependencies": [
+			"ui5-tooling-modules"
+		]
 	}
 }

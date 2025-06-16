@@ -235,9 +235,8 @@ export default class OData extends BaseController {
 	 * Event handler: Show metadata button pressed
 	 */
 	public onShowMetadata() {
-		const xml = this.odataClient?.getMetadataText();
-		if (!xml) return;
-		void this.component.dialogManager.showXmlCodeEditor(xml);
+		if (!this.odataClient) return;
+		void this.component.dialogManager.showXmlCodeEditor(this.odataClient);
 	}
 
 	/**

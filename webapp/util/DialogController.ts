@@ -71,6 +71,7 @@ class DialogController extends BaseObject {
     }
 
     public onInit() {}
+    public onAfterOpen() {}
 
     private async initDialog(options: {
         path: string;
