@@ -269,7 +269,6 @@ export default class OData4Client implements IODataClient {
 	executeAction(options: {
 		actionName: string,
 		parameters: Record<string, string | number | boolean>,
-		method: 'GET' | 'POST'
 	}): Promise<unknown> {
 		throw new Error("Not implemented");
 	}

@@ -50,7 +50,6 @@ export default interface IODataClient {
 	executeAction(options: {
 		actionName: string,
 		parameters: Record<string, string | number | boolean>,
-		method: 'GET' | 'POST'
 	}): Promise<unknown>;
 	destroy(): void;
 }

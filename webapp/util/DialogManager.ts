@@ -71,15 +71,10 @@ export default class DialogManager extends ManagedObject {
 	}
 
 	public async pickService(): Promise<ServiceEntity> {
-		const { controller, dialog, promise } = await this.createDialog({
+		const { dialog, promise } = await this.createDialog({
 			fragmentName: "PickServiceDialog",
 			controllerClass: PickServiceDialogController
 		});
-
-		const services = await this.requests.getServices();
-		const model = controller.getModel("dialog") as JSONModel;
-		model.setProperty("/services", services);
-		dialog.setTitle(`Select Service (${services.length})`);
 
 		dialog.open();
 		const result = await promise;
@@ -345,6 +340,8 @@ export default class DialogManager extends ManagedObject {
 
 		controller.dialog.setModel(i18nModel, "i18n");
 		controller.dialog.setModel(infoModel, "info");
+
+		controller.onInit();
 
         return {
             controller: controller,

@@ -71,6 +71,7 @@ export type MainViewModel = {
 	selectedFunctionName: string;
 	response: string;
 	selectedMethod: string;
+	selectedActionName: string;
 	selectedServiceFunctions: MetadataFunction[];
 	selectedServiceActions: MetadataAction[];
 	selectedEntityProperties: {

@@ -8,6 +8,7 @@ import ODataModel from "sap/ui/model/odata/v2/ODataModel";
  */
 export default class ODataRequests extends ManagedObject {
 	private model: ODataModel;
+	private static cachedServices: ServiceEntity[] | null = null;
 
 	constructor(model: ODataModel) {
 		super();
@@ -18,10 +19,15 @@ export default class ODataRequests extends ManagedObject {
 		return this.model;
 	}
 
-	async getServices(): Promise<ServiceEntity[]> {
+	async getServices(options: { refresh: boolean } = { refresh: false }): Promise<ServiceEntity[]> {
+		if (!options.refresh && ODataRequests.cachedServices) {
+			return ODataRequests.cachedServices;
+		}
+
 		return new Promise((resolve, reject) => {
 			this.model.read("/ODataService", {
 				success: (data: { results: ServiceEntity[] }) => {
+					ODataRequests.cachedServices = data.results;
 					resolve(data.results);
 				},
 				error: reject,

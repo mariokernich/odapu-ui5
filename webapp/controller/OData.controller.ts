@@ -8,6 +8,7 @@ import MessageToast from "sap/m/MessageToast";
 import {
 	FilterRecord,
 	MainViewModel,
+	MetadataAction,
 	MetadataFunction,
 	Project,
 	RequestHeader,
@@ -52,6 +53,7 @@ export default class OData extends BaseController {
 		resourceType: "entity",
 		selectedEntityName: "",
 		selectedFunctionName: "",
+		selectedActionName: "",
 		response: "",
 		selectedMethod: "GET",
 		selectedServiceFunctions: [],
@@ -220,7 +222,11 @@ export default class OData extends BaseController {
 			}
 		} else if (this.localData.resourceType === "function") {
 			void this.execFunctionRequest();
-		} else {
+		}
+		else if (this.localData.resourceType === "action") {
+			void this.execActionRequest();
+		}
+		else {
 			throw new Error(`Unknown resource type: ${this.localData.resourceType}`);
 		}
 	}
@@ -366,12 +372,12 @@ export default class OData extends BaseController {
 		this.resetFilters();
 		this.resetSorting();
 		this.resetEntityInputs();
-		const properties = this.selectedService.entities.find(
+		const properties = this.selectedService.entities?.find(
 			(entity) => entity.name === this.localData.selectedEntityName
 		)?.properties;
 		this.localData.selectedEntityProperties.properties = properties || [];
 		this.localData.selectedEntityProperties.keyProperties =
-			this.selectedService.entities.find(
+			this.selectedService.entities?.find(
 				(entity) => entity.name === this.localData.selectedEntityName
 			)?.keys || [];
 
@@ -394,7 +400,7 @@ export default class OData extends BaseController {
 			(func) => func.name === this.localData.selectedFunctionName
 		);
 
-		(this.getView().getModel("selectedFunction") as JSONModel).setProperty(
+		(this.getView()?.getModel("selectedFunction") as JSONModel).setProperty(
 			"/",
 			selectedFunction
 		);
@@ -687,7 +693,7 @@ export default class OData extends BaseController {
 		this.setBusy(true);
 		try {
 			const fn = (
-				this.getView().getModel("selectedFunction") as JSONModel
+				this.getView()?.getModel("selectedFunction") as JSONModel
 			).getProperty("/") as MetadataFunction;
 			const parameters = this.getFunctionParameterValues();
 
@@ -700,6 +706,28 @@ export default class OData extends BaseController {
 			this.localData.response = JSON.stringify(response, null, 2);
 
 			MessageToast.show(this.component.getText("msg.functionExecuted"));
+		} finally {
+			this.setBusy(false);
+		}
+	}
+
+	private async execActionRequest() {
+		this.setBusy(true);
+		try {
+
+			const action = (
+				this.getView()?.getModel("selectedAction") as JSONModel
+			).getProperty("/") as MetadataAction;
+			const parameters = this.getActionParameterValues();
+
+			const response = await this.odataClient?.executeAction({
+				actionName: action.name,
+				parameters: parameters,
+			});
+
+			this.localData.response = JSON.stringify(response, null, 2);
+			
+			MessageToast.show(this.component.getText("msg.actionExecuted"));
 		} finally {
 			this.setBusy(false);
 		}
@@ -720,7 +748,7 @@ export default class OData extends BaseController {
 	}
 
 	private async handleAddFilter() {
-		const entity = this.selectedService.entities.find(
+		const entity = this.selectedService.entities?.find(
 			(e) => e.name === this.localData.selectedEntityName
 		);
 		if (!entity) {
@@ -731,7 +759,7 @@ export default class OData extends BaseController {
 			entity.properties
 		);
 		const filters = (
-			this.getView().getModel("entityFilters") as JSONModel
+			this.getView()?.getModel("entityFilters") as JSONModel
 		).getProperty("/") as FilterRecord[];
 
 		const conflict = filters.find(
@@ -909,6 +937,12 @@ export default class OData extends BaseController {
 		return parameterInputs;
 	}
 
+	private getActionParameterValues() {
+		const parametersVbox = this.getById("idActionParametersVBox") as VBox;
+		const parameterInputs = Util.getAllInputValues(parametersVbox);
+		return parameterInputs;
+	}
+
 	private getEntityPropertyValues() {
 		const propertiesVbox = this.getById("idPropertiesVBox") as VBox;
 		const keyPropertiesVbox = this.getById("idKeyPropertiesVBox") as VBox;
@@ -974,7 +1008,7 @@ export default class OData extends BaseController {
 	 * Filter: edit filter configuration
 	 */
 	private async handleButtonFilterEditPress(obj: FilterRecord) {
-		const entity = this.selectedService.entities.find(
+		const entity = this.selectedService.entities?.find(
 			(e) => e.name === this.localData.selectedEntityName
 		);
 		if (!entity) {
@@ -1007,7 +1041,7 @@ export default class OData extends BaseController {
 		}
 
 		filters[index] = updated;
-		(this.getView().getModel("entityFilters") as JSONModel).setProperty(
+		(this.getView()?.getModel("entityFilters") as JSONModel).setProperty(
 			"/",
 			filters
 		);
@@ -1023,7 +1057,7 @@ export default class OData extends BaseController {
 	 * Sorter: add sort configuration
 	 */
 	private async handleAddSort() {
-		const entity = this.selectedService.entities.find(
+		const entity = this.selectedService.entities?.find(
 			(e) => e.name === this.localData.selectedEntityName
 		);
 		if (!entity) {
@@ -1095,10 +1129,10 @@ export default class OData extends BaseController {
 
 			const project = {
 				ProjectName: projectName,
-				Odatatype: selectedService.service.ODataType,
-				ServiceName: selectedService.service.ServiceName,
-				ServicePath: selectedService.service.ServicePath,
-				ServiceVersion: selectedService.service.Version,
+				Odatatype: selectedService.service?.ODataType,
+				ServiceName: selectedService.service?.ServiceName,
+				ServicePath: selectedService.service?.ServicePath,
+				ServiceVersion: selectedService.service?.Version,
 				EntityMethod: localData.selectedMethod,
 				EntityName: localData.selectedEntityName,
 				FunctionName: localData.selectedFunctionName,
@@ -1140,11 +1174,11 @@ export default class OData extends BaseController {
 
 				await this.loadService(service);
 
-				localData.resourceType = selectedProject.RequestType;
-				localData.selectedEntityName = selectedProject.EntityName;
-				localData.selectedFunctionName = selectedProject.FunctionName;
+				localData.resourceType = selectedProject.RequestType ?? "";
+				localData.selectedEntityName = selectedProject.EntityName ?? "";
+				localData.selectedFunctionName = selectedProject.FunctionName ?? "";
 				//this.localData.selectedActionName = selectedProject.ActionName;
-				localData.selectedMethod = selectedProject.EntityMethod;
+				localData.selectedMethod = selectedProject.EntityMethod ?? "";
 				localData.top = selectedProject.Top
 					? selectedProject.Top
 					: 10;
