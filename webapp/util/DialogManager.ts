@@ -293,20 +293,30 @@ export default class DialogManager extends ManagedObject {
 					viewMode: "xml" | "mermaid";
 					odataClient: IODataClient;
 					svgContent: string;
+					mermaidRendered: boolean;
 				} = {
 					xml: "",
 					viewMode: "xml",
 					odataClient: client,
 					svgContent: "",
+					mermaidRendered: false
 				};
 				public onInit(): void {
 					this.data.xml = Util.formatXml(client.getMetadataText());
 				}
-				public onMermaid() {
-					setTimeout(async () => {
+				public async onMermaid() {
+					if(this.data.mermaidRendered) {
+						return;
+					}
+					while(document.getElementById("mermaid-diagram") === null) {
+						await new Promise(resolve => setTimeout(resolve, 100));
+					}
+
 					const diagram = document.getElementById(
 						"mermaid-diagram"
 					) as HTMLDivElement;
+
+					this.data.mermaidRendered = true;
 
 					const entities = this.data.odataClient?.getEntities();
 					let classDiagram = "classDiagram";
@@ -351,7 +361,6 @@ export default class DialogManager extends ManagedObject {
 
 					diagram.style.width = parsedMaxWidth + "px";
 					
-					}, 1000);
 				}
 				onCopy() {
 					void Util.copy2Clipboard(this.data.xml);

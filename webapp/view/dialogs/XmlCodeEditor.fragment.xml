@@ -10,35 +10,39 @@
         contentWidth="100%"
         busyIndicatorDelay="0"
     >
+        <customHeader>
+            <OverflowToolbar>
+                <Title text="{i18n>dlg.title.metadata}" />
+                <ToolbarSpacer />
+                <SegmentedButton
+                    width="300px"
+                    selectedKey="{dialog>/viewMode}"
+                >
+                    <items>
+                        <SegmentedButtonItem
+                            text="Code"
+                            key="xml"
+                        />
+                        <SegmentedButtonItem
+                            text="Preview"
+                            key="mermaid"
+                            press="onMermaid"
+                        />
+                    </items>
+                </SegmentedButton>
+            </OverflowToolbar>
+        </customHeader>
         <content>
-            <SegmentedButton
-                width="100%"
-                selectedKey="{dialog>/viewMode}"
-            >
-                <items>
-                    <SegmentedButtonItem
-                        text="Code"
-                        key="xml"
-                    />
-                    <SegmentedButtonItem
-                        text="Preview"
-                        key="mermaid"
-                        press="onMermaid"
-                    />
-                </items>
-            </SegmentedButton>
-            <VBox visible="{= ${dialog>/viewMode} === 'xml'}">
+            <Page showHeader="false">
                 <codeeditor:CodeEditor
                     editable="false"
                     type="xml"
                     value="{dialog>/xml}"
                     syntaxHints="false"
-                    maxLines="1000"
+                     visible="{= ${dialog>/viewMode} === 'xml'}"
                 />
-            </VBox>
-            <VBox visible="{= ${dialog>/viewMode} === 'mermaid'}">
-                <odpu:Mermaid />
-            </VBox>
+                <odpu:Mermaid visible="{= ${dialog>/viewMode} === 'mermaid'}" />
+            </Page>
         </content>
         <buttons>
             <Button
