@@ -318,6 +318,8 @@ export default class OData extends BaseController {
 			this.resetSorting();
 			this.resetEntityInputs();
 
+			console.log(this.odataClient?.getAssociations())
+
 			this.selectedService.entities = this.odataClient?.getEntities() || [];
 			this.localData.selectedServiceFunctions =
 				this.odataClient?.getFunctions() || [];

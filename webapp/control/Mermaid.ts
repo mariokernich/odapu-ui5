@@ -18,7 +18,6 @@ export default class Mermaid extends Control {
 	renderer = {
 		apiVersion: 2,
 		render: (rm: RenderManager, control: Mermaid) => {
-
 			rm.openStart("div");
 			rm.attr("id", "mermaid-diagram-wrapper");
 			rm.attr("style", "overflow-x: scroll;padding:20px;overflow-y: scroll;");

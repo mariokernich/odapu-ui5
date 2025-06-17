@@ -15,16 +15,16 @@
                 <Title text="{i18n>dlg.title.metadata}" />
                 <ToolbarSpacer />
                 <SegmentedButton
-                    width="300px"
+                    width="200px"
                     selectedKey="{dialog>/viewMode}"
                 >
                     <items>
                         <SegmentedButtonItem
-                            text="Code"
+                            text="{i18n>btn.code}"
                             key="xml"
                         />
                         <SegmentedButtonItem
-                            text="Preview"
+                            text="{i18n>btn.preview}"
                             key="mermaid"
                             press="onMermaid"
                         />
@@ -39,9 +39,11 @@
                     type="xml"
                     value="{dialog>/xml}"
                     syntaxHints="false"
-                     visible="{= ${dialog>/viewMode} === 'xml'}"
+                    visible="{= ${dialog>/viewMode} === 'xml'}"
                 />
-                <odpu:Mermaid visible="{= ${dialog>/viewMode} === 'mermaid'}" />
+                <VBox visible="{= ${dialog>/viewMode} === 'mermaid'}">
+                    <odpu:Mermaid />
+                </VBox>
             </Page>
         </content>
         <buttons>

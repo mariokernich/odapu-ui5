@@ -1,5 +1,5 @@
 import Filter from "sap/ui/model/Filter";
-import { MetadataAction, MetadataEntity, MetadataFunction } from "../Types";
+import { MetadataAction, MetadataAssociation, MetadataEntity, MetadataFunction } from "../Types";
 import Sorter from "sap/ui/model/Sorter";
 
 /**
@@ -35,6 +35,7 @@ export interface DeleteEntityOptions {
 export default interface IODataClient {
 	initAsync(): Promise<void>;
 	getEntities(): MetadataEntity[];
+	getAssociations(): MetadataAssociation[];
 	getFunctions(): MetadataFunction[];
 	getActions(): MetadataAction[];
 	readEntity(options: ReadEntityOptions): Promise<unknown>;

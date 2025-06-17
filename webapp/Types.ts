@@ -29,7 +29,43 @@ export type MetadataEntity = {
 	entityType: string;
 	properties: MetadataEntityProperty[];
 	keys: MetadataEntityProperty[];
+	navigationProperties: MetadataNavigationProperty[];
 };
+
+export type MetadataNavigationProperty = {
+	name: string;
+	relationship: string;
+	fromRole: string;
+	toRole: string;
+}
+
+export type MetadataAssociation = {
+	name: string;
+	end: MetadataAssociationEnd[];
+	referentialConstraint?: ReferentialConstraint
+}
+
+export type MetadataAssociationEnd = {
+	type: string;
+	multiplicity: string;
+	role: string;
+	onDeleteAction?: string;
+}
+
+export type ReferentialConstraint = {
+	principal: {
+		role: string;
+		propertyRef: {
+			name: string;
+		}[];
+	}[];
+	dependent: {
+		role: string;
+		propertyRef: {
+			name: string;
+		}[];
+	};
+}
 
 export type MetadataFunction = {
 	name: string;

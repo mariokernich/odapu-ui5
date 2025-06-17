@@ -293,21 +293,16 @@ export default class DialogManager extends ManagedObject {
 					viewMode: "xml" | "mermaid";
 					odataClient: IODataClient;
 					svgContent: string;
-					mermaidRendered: boolean;
 				} = {
 					xml: "",
 					viewMode: "xml",
 					odataClient: client,
-					svgContent: "",
-					mermaidRendered: false
+					svgContent: ""
 				};
 				public onInit(): void {
 					this.data.xml = Util.formatXml(client.getMetadataText());
 				}
 				public async onMermaid() {
-					if(this.data.mermaidRendered) {
-						return;
-					}
 					while(document.getElementById("mermaid-diagram") === null) {
 						await new Promise(resolve => setTimeout(resolve, 100));
 					}
@@ -315,8 +310,6 @@ export default class DialogManager extends ManagedObject {
 					const diagram = document.getElementById(
 						"mermaid-diagram"
 					) as HTMLDivElement;
-
-					this.data.mermaidRendered = true;
 
 					const entities = this.data.odataClient?.getEntities();
 					let classDiagram = "classDiagram";
@@ -332,10 +325,13 @@ export default class DialogManager extends ManagedObject {
 						}
 						for(const property of entity.properties) {
 							if(property.maxLength > 0) {
-							classDiagram += `\t${property.name}() ${property.type}, length ${property.maxLength}\n`;
+							classDiagram += `\t${property.name}: ${property.type}, length ${property.maxLength}\n`;
 						} else {
-							classDiagram += `\t${property.name}() ${property.type}\n`;
+							classDiagram += `\t${property.name}: ${property.type}\n`;
 						}
+					}
+						for(const property of entity.navigationProperties) {
+							classDiagram += `\t${property.name}\n`;
 						}
 						classDiagram += `}\n`;
 					}

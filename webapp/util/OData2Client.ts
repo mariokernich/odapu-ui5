@@ -4,6 +4,7 @@ import ODataModel from "sap/ui/model/odata/ODataModel";
 import ODataModelV2 from "sap/ui/model/odata/v2/ODataModel";
 import {
 	MetadataAction,
+	MetadataAssociation,
 	MetadataEntity,
 	MetadataFunction,
 	MetadataFunctionMethod,
@@ -14,6 +15,7 @@ import { Model$RequestFailedEvent } from "sap/ui/model/Model";
 import MessageBox from "sap/m/MessageBox";
 import Sorter from "sap/ui/model/Sorter";
 import Util from "./Util";
+import Relationship from "sap/gantt/simple/Relationship";
 
 /**
  * @namespace de.kernich.odpu.util
@@ -158,7 +160,7 @@ export default class OData2Client implements IODataClient {
 
 		for (const entity of entitySets) {
 			let entityType = entity.EntityType;
-			if (entityType.includes(".")) {
+			if (entityType && entityType.includes(".")) {
 				entityType = entityType.split(".").pop();
 			}
 			const entityTypeNode = Array.from(
@@ -166,42 +168,107 @@ export default class OData2Client implements IODataClient {
 			).find((node) => {
 				return node.getAttribute("Name") === entityType;
 			});
+			if (!entityTypeNode) continue;
+
 			const properties = Array.from(
 				entityTypeNode.getElementsByTagName("Property")
 			).map((propertyNode) => ({
-				name: propertyNode.getAttribute("Name"),
-				type: propertyNode.getAttribute("Type"),
-				nullable: propertyNode.getAttribute("Nullable"),
+				name: propertyNode.getAttribute("Name") || "",
+				type: propertyNode.getAttribute("Type") || "",
+				nullable: propertyNode.getAttribute("Nullable") || "",
 				maxLength: ODataHelper.getMaxLength(
-					propertyNode.getAttribute("MaxLength")
+					propertyNode.getAttribute("MaxLength") || ""
 				),
 			}));
 			const keyNode = entityTypeNode.getElementsByTagName("Key")[0];
 
-			const propertyRefs = Array.from(
+			const propertyRefs = keyNode ? Array.from(
 				keyNode.getElementsByTagName("PropertyRef")
-			).map((keyNode) => ({
-				name: keyNode.getAttribute("Name"),
-				type: properties.find(
-					(property) => property.name === keyNode.getAttribute("Name")
-				).type,
-				nullable: properties.find(
-					(property) => property.name === keyNode.getAttribute("Name")
-				).nullable,
-				maxLength: properties.find(
-					(property) => property.name === keyNode.getAttribute("Name")
-				).maxLength,
+			).map((keyNode) => {
+				const keyName = keyNode.getAttribute("Name") || "";
+				const prop = properties.find((property) => property.name === keyName) || {name: keyName, type: '', nullable: '', maxLength: 0};
+				return {
+					name: prop.name,
+					type: prop.type,
+					nullable: prop.nullable,
+					maxLength: prop.maxLength,
+				};
+			}) : [];
+
+			// Parse NavigationProperties
+			const navigationProperties = Array.from(
+				entityTypeNode.getElementsByTagName("NavigationProperty")
+			).map((navNode) => ({
+				name: navNode.getAttribute("Name") || "",
+				relationship: navNode.getAttribute("Relationship") || "",
+				fromRole: navNode.getAttribute("FromRole") || "",
+				toRole: navNode.getAttribute("ToRole") || ""
 			}));
 
 			entities.push({
-				name: entity.Name,
-				entityType: entityType,
+				name: entity.Name || "",
+				entityType: entityType || "",
 				properties: properties,
 				keys: propertyRefs,
+				navigationProperties: navigationProperties
 			});
 		}
 		return entities.filter((entity) => !entity.name.startsWith("SAP__"));
 	}
+
+	getAssociations(): MetadataAssociation[] {
+		const associations: MetadataAssociation[] = [];
+		const associationNodes = Array.from(this.metadataXml.getElementsByTagName("Association"));
+
+		for (const assocNode of associationNodes) {
+			const name = assocNode.getAttribute("Name") || "";
+
+			// Ends
+			const endNodes = Array.from(assocNode.getElementsByTagName("End"));
+			const end = endNodes.map(endNode => ({
+				type: endNode.getAttribute("Type") || "",
+				multiplicity: endNode.getAttribute("Multiplicity") || "",
+				role: endNode.getAttribute("Role") || "",
+				onDeleteAction: (() => {
+					const onDelete = endNode.getElementsByTagName("OnDelete")[0];
+					return onDelete ? onDelete.getAttribute("Action") || undefined : undefined;
+				})()
+			}));
+
+			// ReferentialConstraint
+			const refConstraintNode = assocNode.getElementsByTagName("ReferentialConstraint")[0];
+			let referentialConstraint = undefined;
+			if (refConstraintNode) {
+				const principalNode = refConstraintNode.getElementsByTagName("Principal")[0];
+				const dependentNode = refConstraintNode.getElementsByTagName("Dependent")[0];
+
+				referentialConstraint = {
+					principal: principalNode ? [{
+						role: principalNode.getAttribute("Role") || "",
+						propertyRef: Array.from(principalNode.getElementsByTagName("PropertyRef")).map(pr => ({
+							name: pr.getAttribute("Name") || ""
+						}))
+					}] : [],
+					dependent: {
+						role: dependentNode?.getAttribute("Role") || "",
+						propertyRef: dependentNode
+							? Array.from(dependentNode.getElementsByTagName("PropertyRef")).map(pr => ({
+								name: pr.getAttribute("Name") || ""
+							}))
+						: []
+					}
+				};
+			}
+
+			associations.push({
+				name,
+				end,
+				referentialConstraint
+			});
+		}
+		return associations;
+	}
+
 	getMetadataText(): string {
 		return this.metadataText;
 	}
