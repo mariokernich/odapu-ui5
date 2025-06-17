@@ -312,7 +312,17 @@ export default class DialogManager extends ManagedObject {
 					) as HTMLDivElement;
 
 					const entities = this.data.odataClient?.getEntities();
+					const associations = this.data.odataClient?.getAssociations();
+					
 					let classDiagram = "classDiagram";
+
+					// Map EntityType (ohne Namespace) -> EntitySet-Name
+					const entityTypeMap = new Map<string, string>();
+					for(const entity of entities || []) {
+						// entity.entityType ist der EntityType-Name (ohne Namespace), entity.name ist der EntitySet-Name
+						entityTypeMap.set(entity.entityType, entity.name);
+					}
+
 					for(const entity of entities || []) {
 						classDiagram += `\nclass ${entity.name} {\n`;
 						classDiagram += `<<Entity>>\n`;
@@ -344,6 +354,26 @@ export default class DialogManager extends ManagedObject {
 						}
 						classDiagram += `}\n`;
 					}
+
+					// Associations als Verbindungen ergänzen
+					if (associations && Array.isArray(associations)) {
+						for (const assoc of associations) {
+							if (assoc.end && assoc.end.length === 2) {
+								const endA = assoc.end[0];
+								const endB = assoc.end[1];
+								// EntityType ohne Namespace extrahieren
+								const typeA = endA.type.includes(".") ? endA.type.split(".").pop() : endA.type;
+								const typeB = endB.type.includes(".") ? endB.type.split(".").pop() : endB.type;
+								const classA = entityTypeMap.get(typeA || "");
+								const classB = entityTypeMap.get(typeB || "");
+								if (!classA || !classB) continue; // Nur wenn beide existieren
+								const multA = endA.multiplicity || "";
+								const multB = endB.multiplicity || "";
+								classDiagram += `\n${classA} "${multA}" -- "${multB}" ${classB}`;
+							}
+						}
+					}
+
 					diagram.textContent = classDiagram;
 					await mermaid.run({
 						querySelector: "#mermaid-diagram"
