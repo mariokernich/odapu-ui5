@@ -6,6 +6,7 @@ import {
 	Project,
 	ServiceEntity,
 	InfoEntity,
+	MetadataEntity,
 } from "../Types";
 import ManagedObject from "sap/ui/base/ManagedObject";
 import JSONModel from "sap/ui/model/json/JSONModel";
@@ -16,7 +17,6 @@ import ODataModel from "sap/ui/model/odata/v2/ODataModel";
 import DialogController from "./DialogController";
 import SelectProjectDialogController from "../controller/dialog/SelectProjectDialogController";
 import AboutDialogController from "../controller/dialog/AboutDialogController";
-import XmlCodeDialogController from "../controller/dialog/XmlCodeDialogController";
 import ResourceModel from "sap/ui/model/resource/ResourceModel";
 import SaveProjectDialogController from "../controller/dialog/SaveProjectDialogController";
 import ProjectListDialogController from "../controller/dialog/ProjectListDialogController";
@@ -31,8 +31,6 @@ import PickApcDialogController from "../controller/dialog/PickApcDialogControlle
 import PickServiceDialogController from "../controller/dialog/PickServiceDialogController";
 import IODataClient from "./IODataClient";
 import MessageToast from "sap/m/MessageToast";
-import mermaid from "mermaid";
-import Image from "sap/m/Image";
 
 type DialogManagerEntry<TController extends DialogController> = {
 	dialog: Dialog;
@@ -86,7 +84,7 @@ export default class DialogManager extends ManagedObject {
 	}
 
 	public async pickCustomService(): Promise<ServiceEntity> {
-		const { controller, dialog, promise } = await this.createDialog({
+		const { dialog, promise } = await this.createDialog({
 			fragmentName: "PickCustomServiceDialog",
 			controllerClass: PickCustomServiceDialogController,
 		});
@@ -98,6 +96,7 @@ export default class DialogManager extends ManagedObject {
 			ODataType: result.selectedType as "2" | "4",
 			Version: "",
 			ServiceName: "Custom Service",
+			IsFavorite: false,
 		};
 	}
 
@@ -105,7 +104,7 @@ export default class DialogManager extends ManagedObject {
 		key: string;
 		value: string;
 	}> {
-		const { controller, dialog, promise } = await this.createDialog({
+		const { dialog, promise } = await this.createDialog({
 			fragmentName: "AddHeaderDialog",
 			controllerClass: AddHeaderDialogController,
 		});
@@ -284,109 +283,27 @@ export default class DialogManager extends ManagedObject {
 	}
 
 	public async showXmlCodeEditor(client: IODataClient) {
-		const self = this;
 		const { dialog, promise } = await this.createDialog({
 			fragmentName: "XmlCodeEditor",
 			controllerClass: class extends DialogController {
 				data: {
 					xml: string;
-					viewMode: "xml" | "mermaid";
+					viewMode: "xml" | "entity";
 					odataClient: IODataClient;
-					svgContent: string;
+					entities: MetadataEntity[];
 				} = {
 					xml: "",
 					viewMode: "xml",
 					odataClient: client,
-					svgContent: ""
+					entities: []
 				};
 				public onInit(): void {
 					this.data.xml = Util.formatXml(client.getMetadataText());
+					this.data.entities = client.getEntities() || [];
 				}
-				public async onMermaid() {
-					while(document.getElementById("mermaid-diagram") === null) {
-						await new Promise(resolve => setTimeout(resolve, 100));
-					}
-
-					const diagram = document.getElementById(
-						"mermaid-diagram"
-					) as HTMLDivElement;
-
-					const entities = this.data.odataClient?.getEntities();
-					const associations = this.data.odataClient?.getAssociations();
-					
-					let classDiagram = "classDiagram";
-
-					// Map EntityType (ohne Namespace) -> EntitySet-Name
-					const entityTypeMap = new Map<string, string>();
-					for(const entity of entities || []) {
-						// entity.entityType ist der EntityType-Name (ohne Namespace), entity.name ist der EntitySet-Name
-						entityTypeMap.set(entity.entityType, entity.name);
-					}
-
-					for(const entity of entities || []) {
-						classDiagram += `\nclass ${entity.name} {\n`;
-						classDiagram += `<<Entity>>\n`;
-						for(const key of entity.keys) {
-							if(key.maxLength > 0) {
-								classDiagram += `\t🔑 ${key.name}: ${key.type}, length ${key.maxLength}\n`;
-							} else {
-								classDiagram += `\t🔑 ${key.name}: ${key.type}\n`;
-							}
-						}
-						for(const property of entity.properties) {
-							if(property.maxLength > 0) {
-							classDiagram += `\t${property.name}: ${property.type}, length ${property.maxLength}\n`;
-						} else {
-							classDiagram += `\t${property.name}: ${property.type}\n`;
-						}
-					}
-						for(const property of entity.navigationProperties) {
-							classDiagram += `\t${property.name}\n`;
-						}
-						classDiagram += `}\n`;
-					}
-					const functions = this.data.odataClient?.getFunctions();
-					for(const fn of functions || []) {
-						classDiagram += `\nclass ${fn.name} {\n`;
-						classDiagram += `<<Function>>\n`;
-						for(const parameter of fn.parameters) {
-							classDiagram += `\t${parameter.name}: ${parameter.type}, length ${parameter.maxLength}\n`;
-						}
-						classDiagram += `}\n`;
-					}
-
-					// Associations als Verbindungen ergänzen
-					if (associations && Array.isArray(associations)) {
-						for (const assoc of associations) {
-							if (assoc.end && assoc.end.length === 2) {
-								const endA = assoc.end[0];
-								const endB = assoc.end[1];
-								// EntityType ohne Namespace extrahieren
-								const typeA = endA.type.includes(".") ? endA.type.split(".").pop() : endA.type;
-								const typeB = endB.type.includes(".") ? endB.type.split(".").pop() : endB.type;
-								const classA = entityTypeMap.get(typeA || "");
-								const classB = entityTypeMap.get(typeB || "");
-								if (!classA || !classB) continue; // Nur wenn beide existieren
-								const multA = endA.multiplicity || "";
-								const multB = endB.multiplicity || "";
-								classDiagram += `\n${classA} "${multA}" -- "${multB}" ${classB}`;
-							}
-						}
-					}
-
-					diagram.textContent = classDiagram;
-					await mermaid.run({
-						querySelector: "#mermaid-diagram"
-					});
-					const svg = diagram.querySelector("svg") as SVGSVGElement;
-
-					const style = svg.getAttribute("style") || "";
-					const parts = style.split(";");
-					const maxWidth = parts.find(p => p.includes("max-width"))?.split(":")[1].trim();
-					const parsedMaxWidth = parseInt(maxWidth || "1000");
-
-					diagram.style.width = parsedMaxWidth + "px";
-					
+				public onEntityPreview() {
+					// The EntityPreview control will automatically render the entities
+					// when the viewMode changes to "entity"
 				}
 				onCopy() {
 					void Util.copy2Clipboard(this.data.xml);

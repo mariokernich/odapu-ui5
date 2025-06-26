@@ -8,7 +8,6 @@ import { Model$RequestFailedEvent } from "sap/ui/model/Model";
 import MessageBox from "sap/m/MessageBox";
 import ResourceModel from "sap/ui/model/resource/ResourceModel";
 import ResourceBundle from "sap/base/i18n/ResourceBundle";
-import mermaid from "mermaid";
 
 /**
  * @namespace de.kernich.odpu
@@ -32,11 +31,6 @@ export default class Component extends UIComponent {
 		this.dialogManager = new DialogManager(this);
 		this.model = this.getModel() as ODataModel;
 		this.requests = new ODataRequests(this.model);
-
-		mermaid.initialize({
-			startOnLoad: false,
-			
-		});
 
 		void this.handleInitAsync();
 	}

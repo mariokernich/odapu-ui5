@@ -25,8 +25,8 @@
                         />
                         <SegmentedButtonItem
                             text="{i18n>btn.preview}"
-                            key="mermaid"
-                            press="onMermaid"
+                            key="entity"
+                            press="onEntityPreview"
                         />
                     </items>
                 </SegmentedButton>
@@ -41,8 +41,8 @@
                     syntaxHints="false"
                     visible="{= ${dialog>/viewMode} === 'xml'}"
                 />
-                <VBox visible="{= ${dialog>/viewMode} === 'mermaid'}">
-                    <odpu:Mermaid />
+                <VBox visible="{= ${dialog>/viewMode} === 'entity'}">
+                    <odpu:EntityPreview entities="{dialog>/entities}" />
                 </VBox>
             </Page>
         </content>
