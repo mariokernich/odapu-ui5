@@ -41,28 +41,28 @@
                     syntaxHints="false"
                     visible="{= ${dialog>/viewMode} === 'xml'}"
                 />
-                <ScrollContainer visible="{= ${dialog>/viewMode} === 'entity'}" class="sapUiMediumMargin">
+                <ScrollContainer visible="{= ${dialog>/viewMode} === 'entity'}" class="sapUiSmallMargin">
                     <VBox>
                         <Panel
-                            headerText="Entitäten"
+                            headerText="Entitäten ({= ${dialog>/entities}.length })"
                             expandable="true"
                             expanded="true"
-                            class="sapUiNoContentPadding sapUiMediumMarginBottom"
+                            class="sapUiNoContentPadding sapUiSmallMarginBottom"
                         >
                             <odpu:EntityPreview entities="{dialog>/entities}" />
                         </Panel>
                         
                         <Panel
-                            headerText="Function Imports"
+                            headerText="Function Imports ({= ${dialog>/functions}.length })"
                             expandable="true"
                             expanded="true"
-                            class="sapUiNoContentPadding sapUiMediumMarginBottom"
+                            class="sapUiNoContentPadding sapUiSmallMarginBottom"
                         >
                             <odpu:FunctionImportPreview functions="{dialog>/functions}" />
                         </Panel>
                         
                         <Panel
-                            headerText="Actions"
+                            headerText="Actions ({= ${dialog>/actions}.length })"
                             expandable="true"
                             expanded="true"
                             class="sapUiNoContentPadding"

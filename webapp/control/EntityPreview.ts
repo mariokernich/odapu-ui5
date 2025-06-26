@@ -31,6 +31,42 @@ export default class EntityPreview extends Control {
                 const gap = 16;
                 const columnWidth = `calc((100% - ${(columns - 1) * gap}px) / ${columns})`;
                 
+                // Distribute entities dynamically across columns
+                const columnContents: MetadataEntity[][] = Array.from({ length: columns }, () => []);
+                const columnHeights: number[] = Array.from({ length: columns }, () => 0);
+                
+                // Simple height estimation based on content
+                const estimateEntityHeight = (entity: MetadataEntity): number => {
+                    let height = 80; // Base height (header + title)
+                    if (entity.keys && entity.keys.length > 0) {
+                        height += 20 + (entity.keys.length * 20);
+                    }
+                    if (entity.properties && entity.properties.length > 0) {
+                        height += 20 + (entity.properties.length * 20);
+                    }
+                    if (entity.navigationProperties && entity.navigationProperties.length > 0) {
+                        height += 20 + (entity.navigationProperties.length * 20);
+                    }
+                    return height;
+                };
+                
+                // Place each entity in the shortest column
+                entities.forEach(entity => {
+                    const entityHeight = estimateEntityHeight(entity);
+                    let shortestColumn = 0;
+                    let minHeight = columnHeights[0];
+                    
+                    for (let i = 1; i < columns; i++) {
+                        if (columnHeights[i] < minHeight) {
+                            minHeight = columnHeights[i];
+                            shortestColumn = i;
+                        }
+                    }
+                    
+                    columnContents[shortestColumn].push(entity);
+                    columnHeights[shortestColumn] += entityHeight + 16; // 16px margin
+                });
+                
                 // Create column containers
                 for (let i = 0; i < columns; i++) {
                     rm.openStart("div");
@@ -41,9 +77,7 @@ export default class EntityPreview extends Control {
                     rm.openEnd();
                     
                     // Add entities to this column
-                    for (let j = i; j < entities.length; j += columns) {
-                        const entity = entities[j];
-                        
+                    columnContents[i].forEach(entity => {
                         // Render entity box
                         rm.openStart("div");
                         rm.class("entity-box");
@@ -169,7 +203,7 @@ export default class EntityPreview extends Control {
                         }
 
                         rm.close("div");
-                    }
+                    });
                     
                     rm.close("div");
                 }

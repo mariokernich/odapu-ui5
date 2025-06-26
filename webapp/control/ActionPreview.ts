@@ -31,6 +31,40 @@ export default class ActionPreview extends Control {
                 const gap = 16;
                 const columnWidth = `calc((100% - ${(columns - 1) * gap}px) / ${columns})`;
                 
+                // Distribute actions dynamically across columns
+                const columnContents: MetadataAction[][] = Array.from({ length: columns }, () => []);
+                const columnHeights: number[] = Array.from({ length: columns }, () => 0);
+                
+                // Simple height estimation based on content
+                const estimateActionHeight = (action: MetadataAction): number => {
+                    let height = 80; // Base height (header + title)
+                    height += 40; // Bound/Unbound section
+                    if (action.returnType) {
+                        height += 40;
+                    }
+                    if (action.parameters && action.parameters.length > 0) {
+                        height += 20 + (action.parameters.length * 20);
+                    }
+                    return height;
+                };
+                
+                // Place each action in the shortest column
+                actions.forEach(action => {
+                    const actionHeight = estimateActionHeight(action);
+                    let shortestColumn = 0;
+                    let minHeight = columnHeights[0];
+                    
+                    for (let i = 1; i < columns; i++) {
+                        if (columnHeights[i] < minHeight) {
+                            minHeight = columnHeights[i];
+                            shortestColumn = i;
+                        }
+                    }
+                    
+                    columnContents[shortestColumn].push(action);
+                    columnHeights[shortestColumn] += actionHeight + 16; // 16px margin
+                });
+                
                 // Create column containers
                 for (let i = 0; i < columns; i++) {
                     rm.openStart("div");
@@ -41,8 +75,8 @@ export default class ActionPreview extends Control {
                     rm.openEnd();
                     
                     // Add actions to this column
-                    for (let j = i; j < actions.length; j += columns) {
-                        const action = actions[j];
+                    for (let j = 0; j < columnContents[i].length; j++) {
+                        const action = columnContents[i][j];
                         
                         // Render action box
                         rm.openStart("div");

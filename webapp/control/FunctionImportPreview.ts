@@ -31,6 +31,40 @@ export default class FunctionImportPreview extends Control {
                 const gap = 16;
                 const columnWidth = `calc((100% - ${(columns - 1) * gap}px) / ${columns})`;
                 
+                // Distribute functions dynamically across columns
+                const columnContents: MetadataFunction[][] = Array.from({ length: columns }, () => []);
+                const columnHeights: number[] = Array.from({ length: columns }, () => 0);
+                
+                // Simple height estimation based on content
+                const estimateFunctionHeight = (func: MetadataFunction): number => {
+                    let height = 80; // Base height (header + title)
+                    if (func.returnType) {
+                        height += 40;
+                    }
+                    height += 40; // Method section
+                    if (func.parameters && func.parameters.length > 0) {
+                        height += 20 + (func.parameters.length * 20);
+                    }
+                    return height;
+                };
+                
+                // Place each function in the shortest column
+                functions.forEach(func => {
+                    const functionHeight = estimateFunctionHeight(func);
+                    let shortestColumn = 0;
+                    let minHeight = columnHeights[0];
+                    
+                    for (let i = 1; i < columns; i++) {
+                        if (columnHeights[i] < minHeight) {
+                            minHeight = columnHeights[i];
+                            shortestColumn = i;
+                        }
+                    }
+                    
+                    columnContents[shortestColumn].push(func);
+                    columnHeights[shortestColumn] += functionHeight + 16; // 16px margin
+                });
+                
                 // Create column containers
                 for (let i = 0; i < columns; i++) {
                     rm.openStart("div");
@@ -41,8 +75,8 @@ export default class FunctionImportPreview extends Control {
                     rm.openEnd();
                     
                     // Add functions to this column
-                    for (let j = i; j < functions.length; j += columns) {
-                        const func = functions[j];
+                    for (let j = 0; j < columnContents[i].length; j++) {
+                        const func = columnContents[i][j];
                         
                         // Render function box
                         rm.openStart("div");
