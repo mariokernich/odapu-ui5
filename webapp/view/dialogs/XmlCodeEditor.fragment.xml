@@ -51,6 +51,24 @@
                     headerMode="Inline"
                 >
                     <items>
+
+                        <IconTabFilter
+                        text="All ({= ${dialog>/entities}.length + ${dialog>/functions}.length + ${dialog>/actions}.length })"
+                        key="all"
+                        icon="sap-icon://list"
+                    >
+                        <content>
+                            <odpu:EntityPreview
+                                entities="{dialog>/entities}"
+                            />
+                            <odpu:FunctionImportPreview
+                                functions="{dialog>/functions}"
+                            />
+                            <odpu:ActionPreview
+                                actions="{dialog>/actions}"
+                            />
+                        </content>
+                    </IconTabFilter>
                         <IconTabFilter
                             text="Entitäten ({= ${dialog>/entities}.length })"
                             key="entities"

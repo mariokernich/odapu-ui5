@@ -181,6 +181,7 @@ export default class ActionPreview extends Control {
                 rm.style("background", "white");
                 rm.style("border-radius", "0.75rem");
                 rm.style("box-shadow", "0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.08)");
+                rm.style("box-sizing", "border-box");
                 rm.openEnd();
                 rm.text("Keine Actions verfügbar");
                 rm.close("div");
