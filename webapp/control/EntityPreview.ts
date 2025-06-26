@@ -18,209 +18,214 @@ export default class EntityPreview extends Control {
         render: function(rm: RenderManager, control: EntityPreview) {
             rm.openStart("div", control);
             rm.class("entity-preview-container");
-            rm.style("padding", "20px");
+            rm.style("padding", "1rem");
             rm.style("overflow", "auto");
             rm.style("height", "100%");
             rm.style("position", "relative");
+            rm.style("background", "#f5f6f7");
             rm.openEnd();
 
             const entities = control.getEntities() as MetadataEntity[];
             if (entities && entities.length > 0) {
-                // Create masonry columns
-                const columns = 4;
-                const gap = 16;
-                const columnWidth = `calc((100% - ${(columns - 1) * gap}px) / ${columns})`;
+                // CSS Grid Layout with 5 items per row
+                rm.openStart("div");
+                rm.style("display", "grid");
+                rm.style("grid-template-columns", "repeat(5, 1fr)");
+                rm.style("gap", "1rem");
+                rm.style("align-items", "start");
+                rm.openEnd();
                 
-                // Distribute entities dynamically across columns
-                const columnContents: MetadataEntity[][] = Array.from({ length: columns }, () => []);
-                const columnHeights: number[] = Array.from({ length: columns }, () => 0);
-                
-                // Simple height estimation based on content
-                const estimateEntityHeight = (entity: MetadataEntity): number => {
-                    let height = 80; // Base height (header + title)
-                    if (entity.keys && entity.keys.length > 0) {
-                        height += 20 + (entity.keys.length * 20);
-                    }
-                    if (entity.properties && entity.properties.length > 0) {
-                        height += 20 + (entity.properties.length * 20);
-                    }
-                    if (entity.navigationProperties && entity.navigationProperties.length > 0) {
-                        height += 20 + (entity.navigationProperties.length * 20);
-                    }
-                    return height;
-                };
-                
-                // Place each entity in the shortest column
                 entities.forEach(entity => {
-                    const entityHeight = estimateEntityHeight(entity);
-                    let shortestColumn = 0;
-                    let minHeight = columnHeights[0];
-                    
-                    for (let i = 1; i < columns; i++) {
-                        if (columnHeights[i] < minHeight) {
-                            minHeight = columnHeights[i];
-                            shortestColumn = i;
-                        }
-                    }
-                    
-                    columnContents[shortestColumn].push(entity);
-                    columnHeights[shortestColumn] += entityHeight + 16; // 16px margin
-                });
-                
-                // Create column containers
-                for (let i = 0; i < columns; i++) {
+                    // Render entity card
                     rm.openStart("div");
-                    rm.class("masonry-column");
-                    rm.style("width", columnWidth);
-                    rm.style("float", "left");
-                    rm.style("margin-right", i < columns - 1 ? gap + "px" : "0");
+                    rm.class("entity-card");
+                    rm.style("background", "white");
+                    rm.style("border-radius", "0.75rem");
+                    rm.style("box-shadow", "0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.08), 0 0.0625rem 0.125rem 0 rgba(0, 0, 0, 0.12)");
+                    rm.style("overflow", "hidden");
+                    rm.style("border", "1px solid #e5e6e7");
+                    rm.style("height", "fit-content");
+                    rm.openEnd();
+
+                    // Header section with icon and title
+                    rm.openStart("div");
+                    rm.style("background", "linear-gradient(135deg, #0070f3 0%, #0051d5 100%)");
+                    rm.style("color", "white");
+                    rm.style("padding", "0.75rem");
+                    rm.style("display", "flex");
+                    rm.style("align-items", "center");
+                    rm.style("gap", "0.5rem");
                     rm.openEnd();
                     
-                    // Add entities to this column
-                    columnContents[i].forEach(entity => {
-                        // Render entity box
-                        rm.openStart("div");
-                        rm.class("entity-box");
-                        rm.style("border", "1px solid #333");
-                        rm.style("border-radius", "8px");
-                        rm.style("padding", "0");
-                        rm.style("margin", "0 0 16px 0");
-                        rm.style("background", "white");
-                        rm.style("break-inside", "avoid");
-                        rm.openEnd();
-
-                        // Entity type header
-                        rm.openStart("div");
-                        rm.style("border-bottom", "1px solid #ccc");
-                        rm.style("padding", "4px 8px");
-                        rm.style("text-align", "center");
-                        rm.style("font-size", "12px");
-                        rm.style("color", "#666");
-                        rm.openEnd();
-                        rm.text("ENTITY");
-                        rm.close("div");
-
-                        // Title section
-                        rm.openStart("div");
-                        rm.style("border-bottom", "1px solid #ccc");
-                        rm.style("padding", "8px");
-                        rm.style("text-align", "center");
-                        rm.style("font-weight", "bold");
-                        rm.style("font-size", "14px");
-                        rm.style("background", "#f0f0f0");
-                        rm.style("word-break", "break-word");
-                        rm.openEnd();
-                        rm.text(entity.name);
-                        rm.close("div");
-
-                        // Keys section
-                        if (entity.keys && entity.keys.length > 0) {
-                            rm.openStart("div");
-                            rm.style("border-bottom", "1px solid #ccc");
-                            rm.style("padding", "8px");
-                            rm.style("font-size", "12px");
-                            rm.openEnd();
-                            
-                            entity.keys.forEach(key => {
-                                rm.openStart("div");
-                                rm.style("margin", "2px 0");
-                                rm.style("display", "flex");
-                                rm.style("align-items", "center");
-                                rm.style("gap", "4px");
-                                rm.style("word-break", "break-word");
-                                rm.openEnd();
-                                
-                                // Key icon
-                                rm.renderControl(new Icon({
-                                    src: "sap-icon://key",
-                                    size: "1rem"
-                                }));
-                                
-                                rm.text(key.name + ": " + (key.maxLength > 0 ? `${key.type}(${key.maxLength})` : key.type));
-                                rm.close("div");
-                            });
-                            
-                            rm.close("div");
-                        }
-
-                        // Properties section
-                        if (entity.properties && entity.properties.length > 0) {
-                            rm.openStart("div");
-                            rm.style("border-bottom", "1px solid #ccc");
-                            rm.style("padding", "8px");
-                            rm.style("font-size", "12px");
-                            rm.openEnd();
-                            
-                            entity.properties.forEach(property => {
-                                rm.openStart("div");
-                                rm.style("margin", "2px 0");
-                                rm.style("display", "flex");
-                                rm.style("align-items", "center");
-                                rm.style("gap", "4px");
-                                rm.style("word-break", "break-word");
-                                rm.openEnd();
-                                
-                                // Property icon
-                                rm.renderControl(new Icon({
-                                    src: "sap-icon://document-text",
-                                    size: "1rem"
-                                }));
-                                
-                                rm.text(property.name + ": " + (property.maxLength > 0 ? `${property.type}(${property.maxLength})` : property.type));
-                                rm.close("div");
-                            });
-                            
-                            rm.close("div");
-                        }
-
-                        // Navigation Properties section
-                        if (entity.navigationProperties && entity.navigationProperties.length > 0) {
-                            rm.openStart("div");
-                            rm.style("padding", "8px");
-                            rm.style("font-size", "12px");
-                            rm.openEnd();
-                            
-                            entity.navigationProperties.forEach(navProp => {
-                                rm.openStart("div");
-                                rm.style("margin", "2px 0");
-                                rm.style("display", "flex");
-                                rm.style("align-items", "center");
-                                rm.style("gap", "4px");
-                                rm.style("word-break", "break-word");
-                                rm.openEnd();
-                                
-                                // Navigation icon
-                                rm.renderControl(new Icon({
-                                    src: "sap-icon://chain-link",
-                                    size: "1rem"
-                                }));
-                                
-                                rm.text(navProp.name);
-                                rm.close("div");
-                            });
-                            
-                            rm.close("div");
-                        }
-
-                        rm.close("div");
-                    });
+                    // Entity icon
+                    rm.renderControl(new Icon({
+                        src: "sap-icon://database",
+                        size: "1.25rem",
+                        color: "white"
+                    }));
                     
+                    rm.openStart("div");
+                    rm.style("flex", "1");
+                    rm.openEnd();
+                    rm.openStart("div");
+                    rm.style("font-size", "0.625rem");
+                    rm.style("opacity", "0.8");
+                    rm.style("font-weight", "500");
+                    rm.openEnd();
+                    rm.text("ENTITY");
                     rm.close("div");
-                }
+                    rm.openStart("div");
+                    rm.style("font-size", "0.875rem");
+                    rm.style("font-weight", "600");
+                    rm.style("word-break", "break-word");
+                    rm.openEnd();
+                    rm.text(entity.name);
+                    rm.close("div");
+                    rm.close("div");
+                    rm.close("div");
+
+                    // Content section
+                    rm.openStart("div");
+                    rm.style("padding", "1rem");
+                    rm.openEnd();
+
+                    // Keys section
+                    if (entity.keys && entity.keys.length > 0) {
+                        rm.openStart("div");
+                        rm.style("margin-bottom", "1rem");
+                        rm.openEnd();
+                        
+                        rm.openStart("div");
+                        rm.style("font-size", "0.875rem");
+                        rm.style("font-weight", "600");
+                        rm.style("color", "#354a5f");
+                        rm.style("margin-bottom", "0.5rem");
+                        rm.style("display", "flex");
+                        rm.style("align-items", "center");
+                        rm.style("gap", "0.5rem");
+                        rm.openEnd();
+                        
+                        rm.renderControl(new Icon({
+                            src: "sap-icon://key",
+                            size: "1rem",
+                            color: "#0070f3"
+                        }));
+                        rm.text("Keys");
+                        rm.close("div");
+                        
+                        entity.keys.forEach(key => {
+                            rm.openStart("div");
+                            rm.style("padding", "0.5rem");
+                            rm.style("background", "#f8f9fa");
+                            rm.style("border-radius", "0.5rem");
+                            rm.style("margin", "0.25rem 0");
+                            rm.style("font-size", "0.875rem");
+                            rm.style("color", "#354a5f");
+                            rm.openEnd();
+                            rm.text(key.name + ": " + (key.maxLength > 0 ? `${key.type}(${key.maxLength})` : key.type));
+                            rm.close("div");
+                        });
+                        
+                        rm.close("div");
+                    }
+
+                    // Properties section
+                    if (entity.properties && entity.properties.length > 0) {
+                        rm.openStart("div");
+                        rm.style("margin-bottom", "1rem");
+                        rm.openEnd();
+                        
+                        rm.openStart("div");
+                        rm.style("font-size", "0.875rem");
+                        rm.style("font-weight", "600");
+                        rm.style("color", "#354a5f");
+                        rm.style("margin-bottom", "0.5rem");
+                        rm.style("display", "flex");
+                        rm.style("align-items", "center");
+                        rm.style("gap", "0.5rem");
+                        rm.openEnd();
+                        
+                        rm.renderControl(new Icon({
+                            src: "sap-icon://document-text",
+                            size: "1rem",
+                            color: "#0070f3"
+                        }));
+                        rm.text("Properties");
+                        rm.close("div");
+                        
+                        entity.properties.forEach(property => {
+                            rm.openStart("div");
+                            rm.style("padding", "0.5rem");
+                            rm.style("background", "#f8f9fa");
+                            rm.style("border-radius", "0.5rem");
+                            rm.style("margin", "0.25rem 0");
+                            rm.style("font-size", "0.875rem");
+                            rm.style("color", "#354a5f");
+                            rm.style("word-wrap", "break-word");
+                            rm.openEnd();
+                            rm.text(property.name + ": " + (property.maxLength > 0 ? `${property.type}(${property.maxLength})` : property.type));
+                            rm.close("div");
+                        });
+                        
+                        rm.close("div");
+                    }
+
+                    // Navigation Properties section
+                    if (entity.navigationProperties && entity.navigationProperties.length > 0) {
+                        rm.openStart("div");
+                        rm.style("margin-bottom", "0");
+                        rm.openEnd();
+                        
+                        rm.openStart("div");
+                        rm.style("font-size", "0.875rem");
+                        rm.style("font-weight", "600");
+                        rm.style("color", "#354a5f");
+                        rm.style("margin-bottom", "0.5rem");
+                        rm.style("display", "flex");
+                        rm.style("align-items", "center");
+                        rm.style("gap", "0.5rem");
+                        rm.openEnd();
+                        
+                        rm.renderControl(new Icon({
+                            src: "sap-icon://chain-link",
+                            size: "1rem",
+                            color: "#0070f3"
+                        }));
+                        rm.text("Navigation");
+                        rm.close("div");
+                        
+                        entity.navigationProperties.forEach(navProp => {
+                            rm.openStart("div");
+                            rm.style("padding", "0.5rem");
+                            rm.style("background", "#f8f9fa");
+                            rm.style("border-radius", "0.5rem");
+                            rm.style("margin", "0.25rem 0");
+                            rm.style("font-size", "0.875rem");
+                            rm.style("color", "#354a5f");
+                            rm.openEnd();
+                            rm.text(navProp.name);
+                            rm.close("div");
+                        });
+                        
+                        rm.close("div");
+                    }
+
+                    rm.close("div"); // Close content section
+                    rm.close("div"); // Close card
+                });
                 
-                // Clear float
-                rm.openStart("div");
-                rm.style("clear", "both");
-                rm.openEnd();
-                rm.close("div");
+                rm.close("div"); // Close grid container
                 
             } else {
                 rm.openStart("div");
                 rm.style("text-align", "center");
-                rm.style("color", "#666");
+                rm.style("color", "#6a6d70");
                 rm.style("font-style", "italic");
                 rm.style("width", "100%");
-                rm.style("padding", "40px");
+                rm.style("padding", "3rem");
+                rm.style("background", "white");
+                rm.style("border-radius", "0.75rem");
+                rm.style("box-shadow", "0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.08)");
                 rm.openEnd();
                 rm.text("Keine Entitäten verfügbar");
                 rm.close("div");

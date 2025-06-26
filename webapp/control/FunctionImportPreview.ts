@@ -18,202 +18,207 @@ export default class FunctionImportPreview extends Control {
         render: function(rm: RenderManager, control: FunctionImportPreview) {
             rm.openStart("div", control);
             rm.class("function-preview-container");
-            rm.style("padding", "20px");
+            rm.style("padding", "1rem");
             rm.style("overflow", "auto");
             rm.style("height", "100%");
             rm.style("position", "relative");
+            rm.style("background", "#f5f6f7");
             rm.openEnd();
 
             const functions = control.getFunctions() as MetadataFunction[];
             if (functions && functions.length > 0) {
-                // Create masonry columns
-                const columns = 4;
-                const gap = 16;
-                const columnWidth = `calc((100% - ${(columns - 1) * gap}px) / ${columns})`;
+                // CSS Grid Layout with 5 items per row
+                rm.openStart("div");
+                rm.style("display", "grid");
+                rm.style("grid-template-columns", "repeat(5, 1fr)");
+                rm.style("gap", "1rem");
+                rm.style("align-items", "start");
+                rm.openEnd();
                 
-                // Distribute functions dynamically across columns
-                const columnContents: MetadataFunction[][] = Array.from({ length: columns }, () => []);
-                const columnHeights: number[] = Array.from({ length: columns }, () => 0);
-                
-                // Simple height estimation based on content
-                const estimateFunctionHeight = (func: MetadataFunction): number => {
-                    let height = 80; // Base height (header + title)
-                    if (func.returnType) {
-                        height += 40;
-                    }
-                    height += 40; // Method section
-                    if (func.parameters && func.parameters.length > 0) {
-                        height += 20 + (func.parameters.length * 20);
-                    }
-                    return height;
-                };
-                
-                // Place each function in the shortest column
                 functions.forEach(func => {
-                    const functionHeight = estimateFunctionHeight(func);
-                    let shortestColumn = 0;
-                    let minHeight = columnHeights[0];
-                    
-                    for (let i = 1; i < columns; i++) {
-                        if (columnHeights[i] < minHeight) {
-                            minHeight = columnHeights[i];
-                            shortestColumn = i;
-                        }
-                    }
-                    
-                    columnContents[shortestColumn].push(func);
-                    columnHeights[shortestColumn] += functionHeight + 16; // 16px margin
-                });
-                
-                // Create column containers
-                for (let i = 0; i < columns; i++) {
+                    // Render function card
                     rm.openStart("div");
-                    rm.class("masonry-column");
-                    rm.style("width", columnWidth);
-                    rm.style("float", "left");
-                    rm.style("margin-right", i < columns - 1 ? gap + "px" : "0");
+                    rm.class("function-card");
+                    rm.style("background", "white");
+                    rm.style("border-radius", "0.75rem");
+                    rm.style("box-shadow", "0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.08), 0 0.0625rem 0.125rem 0 rgba(0, 0, 0, 0.12)");
+                    rm.style("overflow", "hidden");
+                    rm.style("border", "1px solid #e5e6e7");
+                    rm.style("height", "fit-content");
+                    rm.openEnd();
+
+                    // Header section with icon and title
+                    rm.openStart("div");
+                    rm.style("background", "linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)");
+                    rm.style("color", "white");
+                    rm.style("padding", "0.75rem");
+                    rm.style("display", "flex");
+                    rm.style("align-items", "center");
+                    rm.style("gap", "0.5rem");
                     rm.openEnd();
                     
-                    // Add functions to this column
-                    for (let j = 0; j < columnContents[i].length; j++) {
-                        const func = columnContents[i][j];
-                        
-                        // Render function box
-                        rm.openStart("div");
-                        rm.class("function-box");
-                        rm.style("border", "1px solid #333");
-                        rm.style("border-radius", "8px");
-                        rm.style("padding", "0");
-                        rm.style("margin", "0 0 16px 0");
-                        rm.style("background", "white");
-                        rm.style("break-inside", "avoid");
-                        rm.openEnd();
+                    // Function icon
+                    rm.renderControl(new Icon({
+                        src: "sap-icon://syntax",
+                        size: "1.25rem",
+                        color: "white"
+                    }));
+                    
+                    rm.openStart("div");
+                    rm.style("flex", "1");
+                    rm.openEnd();
+                    rm.openStart("div");
+                    rm.style("font-size", "0.625rem");
+                    rm.style("opacity", "0.8");
+                    rm.style("font-weight", "500");
+                    rm.openEnd();
+                    rm.text("FUNCTION");
+                    rm.close("div");
+                    rm.openStart("div");
+                    rm.style("font-size", "0.875rem");
+                    rm.style("font-weight", "600");
+                    rm.style("word-break", "break-word");
+                    rm.openEnd();
+                    rm.text(func.name);
+                    rm.close("div");
+                    rm.close("div");
+                    rm.close("div");
 
-                        // Function type header
-                        rm.openStart("div");
-                        rm.style("border-bottom", "1px solid #ccc");
-                        rm.style("padding", "4px 8px");
-                        rm.style("text-align", "center");
-                        rm.style("font-size", "12px");
-                        rm.style("color", "#666");
-                        rm.openEnd();
-                        rm.text("FUNCTION");
-                        rm.close("div");
+                    // Content section
+                    rm.openStart("div");
+                    rm.style("padding", "1rem");
+                    rm.openEnd();
 
-                        // Title section
+                    // Return type section
+                    if (func.returnType) {
                         rm.openStart("div");
-                        rm.style("border-bottom", "1px solid #ccc");
-                        rm.style("padding", "8px");
-                        rm.style("text-align", "center");
-                        rm.style("font-weight", "bold");
-                        rm.style("font-size", "14px");
-                        rm.style("background", "#f0f0f0");
-                        rm.style("word-break", "break-word");
-                        rm.openEnd();
-                        rm.text(func.name);
-                        rm.close("div");
-
-                        // Return type section
-                        if (func.returnType) {
-                            rm.openStart("div");
-                            rm.style("border-bottom", "1px solid #ccc");
-                            rm.style("padding", "8px");
-                            rm.style("font-size", "12px");
-                            rm.openEnd();
-                            
-                            rm.openStart("div");
-                            rm.style("margin", "2px 0");
-                            rm.style("display", "flex");
-                            rm.style("align-items", "center");
-                            rm.style("gap", "4px");
-                            rm.style("word-break", "break-word");
-                            rm.openEnd();
-                            
-                            // Return type icon
-                            rm.renderControl(new Icon({
-                                src: "sap-icon://arrow-return",
-                                size: "1rem"
-                            }));
-                            
-                            rm.text("Returns: " + func.returnType);
-                            rm.close("div");
-                            
-                            rm.close("div");
-                        }
-
-                        // Method section
-                        rm.openStart("div");
-                        rm.style("border-bottom", "1px solid #ccc");
-                        rm.style("padding", "8px");
-                        rm.style("font-size", "12px");
+                        rm.style("margin-bottom", "1rem");
                         rm.openEnd();
                         
                         rm.openStart("div");
-                        rm.style("margin", "2px 0");
+                        rm.style("font-size", "0.875rem");
+                        rm.style("font-weight", "600");
+                        rm.style("color", "#354a5f");
+                        rm.style("margin-bottom", "0.5rem");
                         rm.style("display", "flex");
                         rm.style("align-items", "center");
-                        rm.style("gap", "4px");
+                        rm.style("gap", "0.5rem");
                         rm.openEnd();
                         
-                        // Method icon
                         rm.renderControl(new Icon({
-                            src: "sap-icon://request",
-                            size: "1rem"
+                            src: "sap-icon://arrow-return",
+                            size: "1rem",
+                            color: "#ff6b6b"
                         }));
-                        
-                        rm.text("Method: " + func.method);
+                        rm.text("Return Type");
                         rm.close("div");
                         
+                        rm.openStart("div");
+                        rm.style("padding", "0.5rem");
+                        rm.style("background", "#f8f9fa");
+                        rm.style("border-radius", "0.5rem");
+                        rm.style("font-size", "0.875rem");
+                        rm.style("color", "#354a5f");
+                        rm.style("word-wrap", "break-word");
+                        rm.openEnd();
+                        rm.text(func.returnType);
                         rm.close("div");
-
-                        // Parameters section
-                        if (func.parameters && func.parameters.length > 0) {
-                            rm.openStart("div");
-                            rm.style("padding", "8px");
-                            rm.style("font-size", "12px");
-                            rm.openEnd();
-                            
-                            func.parameters.forEach(parameter => {
-                                rm.openStart("div");
-                                rm.style("margin", "2px 0");
-                                rm.style("display", "flex");
-                                rm.style("align-items", "center");
-                                rm.style("gap", "4px");
-                                rm.style("word-break", "break-word");
-                                rm.openEnd();
-                                
-                                // Parameter icon
-                                rm.renderControl(new Icon({
-                                    src: "sap-icon://input",
-                                    size: "1rem"
-                                }));
-                                
-                                rm.text(parameter.name + ": " + (parameter.maxLength > 0 ? `${parameter.type}(${parameter.maxLength})` : parameter.type));
-                                rm.close("div");
-                            });
-                            
-                            rm.close("div");
-                        }
-
+                        
                         rm.close("div");
                     }
+
+                    // Method section
+                    rm.openStart("div");
+                    rm.style("margin-bottom", "1rem");
+                    rm.openEnd();
+                    
+                    rm.openStart("div");
+                    rm.style("font-size", "0.875rem");
+                    rm.style("font-weight", "600");
+                    rm.style("color", "#354a5f");
+                    rm.style("margin-bottom", "0.5rem");
+                    rm.style("display", "flex");
+                    rm.style("align-items", "center");
+                    rm.style("gap", "0.5rem");
+                    rm.openEnd();
+                    
+                    rm.renderControl(new Icon({
+                        src: "sap-icon://request",
+                        size: "1rem",
+                        color: "#ff6b6b"
+                    }));
+                    rm.text("Method");
+                    rm.close("div");
+                    
+                    rm.openStart("div");
+                    rm.style("padding", "0.5rem");
+                    rm.style("background", "#f8f9fa");
+                    rm.style("border-radius", "0.5rem");
+                    rm.style("font-size", "0.875rem");
+                    rm.style("color", "#354a5f");
+                    rm.style("word-wrap", "break-word");
+                    rm.openEnd();
+                    rm.text(func.method);
+                    rm.close("div");
                     
                     rm.close("div");
-                }
+
+                    // Parameters section
+                    if (func.parameters && func.parameters.length > 0) {
+                        rm.openStart("div");
+                        rm.style("margin-bottom", "0");
+                        rm.openEnd();
+                        
+                        rm.openStart("div");
+                        rm.style("font-size", "0.875rem");
+                        rm.style("font-weight", "600");
+                        rm.style("color", "#354a5f");
+                        rm.style("margin-bottom", "0.5rem");
+                        rm.style("display", "flex");
+                        rm.style("align-items", "center");
+                        rm.style("gap", "0.5rem");
+                        rm.openEnd();
+                        
+                        rm.renderControl(new Icon({
+                            src: "sap-icon://input",
+                            size: "1rem",
+                            color: "#ff6b6b"
+                        }));
+                        rm.text("Parameters");
+                        rm.close("div");
+                        
+                        func.parameters.forEach(parameter => {
+                            rm.openStart("div");
+                            rm.style("padding", "0.5rem");
+                            rm.style("background", "#f8f9fa");
+                            rm.style("border-radius", "0.5rem");
+                            rm.style("margin", "0.25rem 0");
+                            rm.style("font-size", "0.875rem");
+                            rm.style("color", "#354a5f");
+                            rm.style("word-wrap", "break-word");
+                            rm.openEnd();
+                            rm.text(parameter.name + ": " + (parameter.maxLength > 0 ? `${parameter.type}(${parameter.maxLength})` : parameter.type));
+                            rm.close("div");
+                        });
+                        
+                        rm.close("div");
+                    }
+
+                    rm.close("div"); // Close content section
+                    rm.close("div"); // Close card
+                });
                 
-                // Clear float
-                rm.openStart("div");
-                rm.style("clear", "both");
-                rm.openEnd();
-                rm.close("div");
-                
+                rm.close("div"); // Close grid container
             } else {
                 rm.openStart("div");
                 rm.style("text-align", "center");
-                rm.style("color", "#666");
+                rm.style("color", "#6a6d70");
                 rm.style("font-style", "italic");
                 rm.style("width", "100%");
-                rm.style("padding", "40px");
+                rm.style("padding", "3rem");
+                rm.style("background", "white");
+                rm.style("border-radius", "0.75rem");
+                rm.style("box-shadow", "0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.08)");
                 rm.openEnd();
                 rm.text("Keine Function Imports verfügbar");
                 rm.close("div");

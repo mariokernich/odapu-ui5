@@ -15,18 +15,20 @@
                 <Title text="{i18n>dlg.title.metadata}" />
                 <ToolbarSpacer />
                 <SegmentedButton
-                    width="200px"
+                    width="250px"
                     selectedKey="{dialog>/viewMode}"
                 >
                     <items>
                         <SegmentedButtonItem
                             text="{i18n>btn.code}"
                             key="xml"
+                            icon="sap-icon://source-code"
                         />
                         <SegmentedButtonItem
                             text="{i18n>btn.preview}"
                             key="entity"
                             press="onEntityPreview"
+                            icon="sap-icon://document-text"
                         />
                     </items>
                 </SegmentedButton>
@@ -41,36 +43,51 @@
                     syntaxHints="false"
                     visible="{= ${dialog>/viewMode} === 'xml'}"
                 />
-                <ScrollContainer visible="{= ${dialog>/viewMode} === 'entity'}" class="sapUiSmallMargin">
-                    <VBox>
-                        <Panel
-                            headerText="Entitäten ({= ${dialog>/entities}.length })"
-                            expandable="true"
-                            expanded="true"
-                            class="sapUiNoContentPadding sapUiSmallMarginBottom"
+                <IconTabBar
+                    selectedKey="{dialog>/selectedType}"
+                    expandable="false"
+                    visible="{= ${dialog>/viewMode} === 'entity'}"
+                    upperCase="true"
+                    headerMode="Inline"
+                >
+                    <items>
+                        <IconTabFilter
+                            text="Entitäten ({= ${dialog>/entities}.length })"
+                            key="entities"
+                            icon="sap-icon://database"
                         >
-                            <odpu:EntityPreview entities="{dialog>/entities}" />
-                        </Panel>
-                        
-                        <Panel
-                            headerText="Function Imports ({= ${dialog>/functions}.length })"
-                            expandable="true"
-                            expanded="true"
-                            class="sapUiNoContentPadding sapUiSmallMarginBottom"
+                            <content>
+                                <odpu:EntityPreview
+                                    entities="{dialog>/entities}"
+                                />
+                            </content>
+                        </IconTabFilter>
+
+                        <IconTabFilter
+                            text="Function Imports ({= ${dialog>/functions}.length })"
+                            key="functions"
+                            icon="sap-icon://syntax"
                         >
-                            <odpu:FunctionImportPreview functions="{dialog>/functions}" />
-                        </Panel>
-                        
-                        <Panel
-                            headerText="Actions ({= ${dialog>/actions}.length })"
-                            expandable="true"
-                            expanded="true"
-                            class="sapUiNoContentPadding"
+                            <content>
+                                <odpu:FunctionImportPreview
+                                    functions="{dialog>/functions}"
+                                />
+                            </content>
+                        </IconTabFilter>
+
+                        <IconTabFilter
+                            text="Actions ({= ${dialog>/actions}.length })"
+                            key="actions"
+                            icon="sap-icon://play"
                         >
-                            <odpu:ActionPreview actions="{dialog>/actions}" />
-                        </Panel>
-                    </VBox>
-                </ScrollContainer>
+                            <content>
+                                <odpu:ActionPreview
+                                    actions="{dialog>/actions}"
+                                />
+                            </content>
+                        </IconTabFilter>
+                    </items>
+                </IconTabBar>
             </Page>
         </content>
         <buttons>

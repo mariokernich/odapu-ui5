@@ -70,9 +70,6 @@
 		"ui5-tooling-transpile": "^3.5.0",
 		"wdio-ui5-service": "^2.1.1"
 	},
-	"dependencies": {
-		"mermaid": "^11.6.0"
-	},
 	"ui5": {
 		"dependencies": [
 			"ui5-tooling-modules"
