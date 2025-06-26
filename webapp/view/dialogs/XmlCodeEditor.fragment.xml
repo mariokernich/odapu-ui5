@@ -41,9 +41,36 @@
                     syntaxHints="false"
                     visible="{= ${dialog>/viewMode} === 'xml'}"
                 />
-                <VBox visible="{= ${dialog>/viewMode} === 'entity'}">
-                    <odpu:EntityPreview entities="{dialog>/entities}" />
-                </VBox>
+                <ScrollContainer visible="{= ${dialog>/viewMode} === 'entity'}" class="sapUiMediumMargin">
+                    <VBox>
+                        <Panel
+                            headerText="Entitäten"
+                            expandable="true"
+                            expanded="true"
+                            class="sapUiNoContentPadding sapUiMediumMarginBottom"
+                        >
+                            <odpu:EntityPreview entities="{dialog>/entities}" />
+                        </Panel>
+                        
+                        <Panel
+                            headerText="Function Imports"
+                            expandable="true"
+                            expanded="true"
+                            class="sapUiNoContentPadding sapUiMediumMarginBottom"
+                        >
+                            <odpu:FunctionImportPreview functions="{dialog>/functions}" />
+                        </Panel>
+                        
+                        <Panel
+                            headerText="Actions"
+                            expandable="true"
+                            expanded="true"
+                            class="sapUiNoContentPadding"
+                        >
+                            <odpu:ActionPreview actions="{dialog>/actions}" />
+                        </Panel>
+                    </VBox>
+                </ScrollContainer>
             </Page>
         </content>
         <buttons>

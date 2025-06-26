@@ -7,6 +7,8 @@ import {
 	ServiceEntity,
 	InfoEntity,
 	MetadataEntity,
+	MetadataFunction,
+	MetadataAction,
 } from "../Types";
 import ManagedObject from "sap/ui/base/ManagedObject";
 import JSONModel from "sap/ui/model/json/JSONModel";
@@ -291,18 +293,24 @@ export default class DialogManager extends ManagedObject {
 					viewMode: "xml" | "entity";
 					odataClient: IODataClient;
 					entities: MetadataEntity[];
+					functions: MetadataFunction[];
+					actions: MetadataAction[];
 				} = {
 					xml: "",
 					viewMode: "xml",
 					odataClient: client,
-					entities: []
+					entities: [],
+					functions: [],
+					actions: []
 				};
 				public onInit(): void {
 					this.data.xml = Util.formatXml(client.getMetadataText());
 					this.data.entities = client.getEntities() || [];
+					this.data.functions = client.getFunctions() || [];
+					this.data.actions = client.getActions() || [];
 				}
 				public onEntityPreview() {
-					// The EntityPreview control will automatically render the entities
+					// The preview controls will automatically render the data
 					// when the viewMode changes to "entity"
 				}
 				onCopy() {
