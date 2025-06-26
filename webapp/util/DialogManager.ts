@@ -9,6 +9,7 @@ import {
 	MetadataEntity,
 	MetadataFunction,
 	MetadataAction,
+	MetadataComplexType,
 } from "../Types";
 import ManagedObject from "sap/ui/base/ManagedObject";
 import JSONModel from "sap/ui/model/json/JSONModel";
@@ -295,19 +296,22 @@ export default class DialogManager extends ManagedObject {
 					entities: MetadataEntity[];
 					functions: MetadataFunction[];
 					actions: MetadataAction[];
+					complexTypes: MetadataComplexType[];
 				} = {
 					xml: "",
 					viewMode: "xml",
 					odataClient: client,
 					entities: [],
 					functions: [],
-					actions: []
+					actions: [],
+					complexTypes: []
 				};
 				public onInit(): void {
 					this.data.xml = Util.formatXml(client.getMetadataText());
 					this.data.entities = client.getEntities() || [];
 					this.data.functions = client.getFunctions() || [];
 					this.data.actions = client.getActions() || [];
+					this.data.complexTypes = client.getComplexTypes() || [];
 				}
 				public onEntityPreview() {
 					// The preview controls will automatically render the data

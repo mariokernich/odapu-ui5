@@ -22,7 +22,7 @@
                         <SegmentedButtonItem
                             text="{i18n>btn.code}"
                             key="xml"
-                            icon="sap-icon://source-code"
+                            icon="sap-icon://attachment-html"
                         />
                         <SegmentedButtonItem
                             text="{i18n>btn.preview}"
@@ -53,19 +53,26 @@
                     <items>
 
                         <IconTabFilter
-                        text="All ({= ${dialog>/entities}.length + ${dialog>/functions}.length + ${dialog>/actions}.length })"
+                        text="All ({= ${dialog>/entities}.length + ${dialog>/functions}.length + ${dialog>/actions}.length + ${dialog>/complexTypes}.length })"
                         key="all"
                         icon="sap-icon://list"
                     >
                         <content>
                             <odpu:EntityPreview
                                 entities="{dialog>/entities}"
+                                visible="{= ${dialog>/entities}.length > 0}"
                             />
                             <odpu:FunctionImportPreview
                                 functions="{dialog>/functions}"
+                                visible="{= ${dialog>/functions}.length > 0}"
                             />
                             <odpu:ActionPreview
                                 actions="{dialog>/actions}"
+                                visible="{= ${dialog>/actions}.length > 0}"
+                            />
+                            <odpu:ComplexTypePreview
+                                complexTypes="{dialog>/complexTypes}"
+                                visible="{= ${dialog>/complexTypes}.length > 0}"
                             />
                         </content>
                     </IconTabFilter>
@@ -101,6 +108,18 @@
                             <content>
                                 <odpu:ActionPreview
                                     actions="{dialog>/actions}"
+                                />
+                            </content>
+                        </IconTabFilter>
+
+                        <IconTabFilter
+                            text="Complex Types ({= ${dialog>/complexTypes}.length })"
+                            key="complexTypes"
+                            icon="sap-icon://puzzle"
+                        >
+                            <content>
+                                <odpu:ComplexTypePreview
+                                    complexTypes="{dialog>/complexTypes}"
                                 />
                             </content>
                         </IconTabFilter>

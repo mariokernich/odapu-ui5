@@ -87,6 +87,11 @@ export type MetadataAction = {
 	entitySetPath?: string;
 };
 
+export type MetadataComplexType = {
+	name: string;
+	properties: MetadataEntityProperty[];
+};
+
 export type MetadataFunctionMethod = "GET" | "POST";
 
 export type MetadataEntityProperty = {

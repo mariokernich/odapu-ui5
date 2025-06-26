@@ -9,6 +9,8 @@ import {
 	MetadataEntity,
 	MetadataFunction,
 	MetadataFunctionMethod,
+	MetadataComplexType,
+	MetadataAssociation,
 } from "../Types";
 import ODataHelper from "./ODataHelper";
 import MessageBox from "sap/m/MessageBox";
@@ -89,6 +91,42 @@ export default class OData4Client implements IODataClient {
 
 		return actions;
 	}
+
+	getComplexTypes(): MetadataComplexType[] {
+		const complexTypes: MetadataComplexType[] = [];
+
+		const complexTypeNodes = Array.from(
+			this.metadataXml.getElementsByTagName("ComplexType")
+		);
+
+		for (const complexTypeNode of complexTypeNodes) {
+			const name = complexTypeNode.getAttribute("Name");
+			if (!name) continue;
+
+			const properties = Array.from(
+				complexTypeNode.getElementsByTagName("Property")
+			).map((propertyNode) => ({
+				name: propertyNode.getAttribute("Name") || "",
+				type: propertyNode.getAttribute("Type") || "",
+				nullable: propertyNode.getAttribute("Nullable") || "",
+				maxLength: ODataHelper.getMaxLength(
+					propertyNode.getAttribute("MaxLength") || ""
+				),
+			}));
+
+			complexTypes.push({
+				name: name,
+				properties: properties,
+			});
+		}
+
+		return complexTypes;
+	}
+
+	getAssociations(): MetadataAssociation[] {
+		return [];
+	}
+
 	destroy(): void {}
 
 	async createEntity(

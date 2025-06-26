@@ -45,6 +45,7 @@ export default class ActionPreview extends Control {
                     rm.style("overflow", "hidden");
                     rm.style("border", "1px solid #e5e6e7");
                     rm.style("height", "fit-content");
+                    rm.style("box-sizing", "border-box");
                     rm.openEnd();
 
                     // Header section with icon and title
@@ -119,6 +120,7 @@ export default class ActionPreview extends Control {
                         rm.style("border-radius", "0.5rem");
                         rm.style("font-size", "0.875rem");
                         rm.style("color", "#354a5f");
+                        rm.style("word-wrap", "break-word");
                         rm.openEnd();
                         rm.text(action.returnType);
                         rm.close("div");
@@ -158,6 +160,7 @@ export default class ActionPreview extends Control {
                             rm.style("margin", "0.25rem 0");
                             rm.style("font-size", "0.875rem");
                             rm.style("color", "#354a5f");
+                            rm.style("word-wrap", "break-word");
                             rm.openEnd();
                             rm.text(parameter.name + ": " + parameter.type + (parameter.nullable ? " (nullable)" : ""));
                             rm.close("div");

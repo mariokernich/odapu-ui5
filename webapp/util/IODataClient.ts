@@ -1,5 +1,5 @@
 import Filter from "sap/ui/model/Filter";
-import { MetadataAction, MetadataAssociation, MetadataEntity, MetadataFunction } from "../Types";
+import { MetadataAction, MetadataAssociation, MetadataEntity, MetadataFunction, MetadataComplexType } from "../Types";
 import Sorter from "sap/ui/model/Sorter";
 
 /**
@@ -38,6 +38,7 @@ export default interface IODataClient {
 	getAssociations(): MetadataAssociation[];
 	getFunctions(): MetadataFunction[];
 	getActions(): MetadataAction[];
+	getComplexTypes(): MetadataComplexType[];
 	readEntity(options: ReadEntityOptions): Promise<unknown>;
 	getEntity(options: GetEntityOptions): Promise<unknown>;
 	createEntity(options: CreateEntityOptions): Promise<void>;

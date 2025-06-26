@@ -8,6 +8,7 @@ import {
 	MetadataEntity,
 	MetadataFunction,
 	MetadataFunctionMethod,
+	MetadataComplexType,
 } from "../Types";
 import ODataHelper from "./ODataHelper";
 import Context from "sap/ui/model/odata/v2/Context";
@@ -72,6 +73,37 @@ export default class OData2Client implements IODataClient {
 	}
 	getActions(): MetadataAction[] {
 		return [];
+	}
+
+	getComplexTypes(): MetadataComplexType[] {
+		const complexTypes: MetadataComplexType[] = [];
+
+		const complexTypeNodes = Array.from(
+			this.metadataXml.getElementsByTagName("ComplexType")
+		);
+
+		for (const complexTypeNode of complexTypeNodes) {
+			const name = complexTypeNode.getAttribute("Name");
+			if (!name) continue;
+
+			const properties = Array.from(
+				complexTypeNode.getElementsByTagName("Property")
+			).map((propertyNode) => ({
+				name: propertyNode.getAttribute("Name") || "",
+				type: propertyNode.getAttribute("Type") || "",
+				nullable: propertyNode.getAttribute("Nullable") || "",
+				maxLength: ODataHelper.getMaxLength(
+					propertyNode.getAttribute("MaxLength") || ""
+				),
+			}));
+
+			complexTypes.push({
+				name: name,
+				properties: properties,
+			});
+		}
+
+		return complexTypes;
 	}
 
 	destroy(): void {}

@@ -10,7 +10,7 @@ export default class XmlCodeDialogController extends DialogController {
     data: {
         xml: string;
         viewMode: "xml" | "mermaid";
-        selectedType: "entities" | "functions" | "actions";
+        selectedType: "entities" | "functions" | "actions" | "complexTypes" | "all";
         odataClient: IODataClient | null;
     } = {
         xml: "",
