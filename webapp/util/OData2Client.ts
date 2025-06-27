@@ -126,26 +126,31 @@ export default class OData2Client implements IODataClient {
 			entityName: string;
 			keys: Record<string, string | number | boolean>;
 			headers: Record<string, string>;
+			expand?: string[];
 		}
 	): Promise<object> {
 		this.model.setHeaders(options.headers);
-		const path = this.model.createKey(`/${options.entityName}`, options.keys);
-		const context = await new Promise<Context>((resolve, reject) => {
-			this.model.createBindingContext(
-				path,
-				undefined,
-				{},
-				(data: Context) => {
-					if (data) {
-						resolve(data);
-					} else {
-						reject(new Error("Failed to create binding context"));
-					}
+		
+		const keyPath = Object.entries(options.keys)
+			.map(([key, value]) => `${key}='${value}'`)
+			.join(",");
+			
+		const urlParameters: Record<string, string> = {};
+		if (options.expand && options.expand.length > 0) {
+			urlParameters.$expand = options.expand.join(',');
+		}
+		
+		return await new Promise((resolve, reject) => {
+			this.model.read(`/${options.entityName}(${keyPath})`, {
+				success: (data: object) => {
+					resolve(data);
 				},
-				true
-			);
+				error: (error: Error) => {
+					reject(error);
+				},
+				urlParameters: Object.keys(urlParameters).length > 0 ? urlParameters : undefined,
+			});
 		});
-		return context.getObject();
 	}
 
 	async deleteEntity(
@@ -345,8 +350,19 @@ export default class OData2Client implements IODataClient {
 		headers: Record<string, string>;
 		top: number;
 		skip: number;
+		expand?: string[];
 	}) {
 		this.model.setHeaders(options.headers);
+		
+		const urlParameters: Record<string, string> = {
+			$top: options.top.toString(),
+			$skip: options.skip.toString(),
+		};
+		
+		if (options.expand && options.expand.length > 0) {
+			urlParameters.$expand = options.expand.join(',');
+		}
+		
 		return await new Promise((resolve, reject) => {
 			this.model.read(`/${options.entityName}`, {
 				success: (data: object) => {
@@ -357,10 +373,7 @@ export default class OData2Client implements IODataClient {
 				},
 				filters: options.filters.length > 0 ? options.filters : undefined,
 				sorters: options.sorting.length > 0 ? options.sorting : undefined,
-				urlParameters: {
-					$top: options.top.toString(),
-					$skip: options.skip.toString(),
-				},
+				urlParameters: urlParameters,
 			});
 		});
 	}

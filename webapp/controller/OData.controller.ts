@@ -38,6 +38,7 @@ import Icon from "sap/ui/core/Icon";
 import { Input$ChangeEvent } from "sap/ui/webc/main/Input";
 import Sorter from "sap/ui/model/Sorter";
 import Context from "sap/ui/model/odata/v2/Context";
+import { CheckBox$SelectEvent } from "sap/m/CheckBox";
 
 /**
  * @namespace de.kernich.odpu.controller
@@ -60,7 +61,9 @@ export default class OData extends BaseController {
 		selectedEntityProperties: {
 			properties: [],
 			keyProperties: [],
+			navigationProperties: [],
 		},
+		selectedNavigationProperties: [],
 		entityCount: 0,
 		functionCount: 0,
 		actionCount: 0,
@@ -452,22 +455,23 @@ export default class OData extends BaseController {
 		this.resetFilters();
 		this.resetSorting();
 		this.resetEntityInputs();
-		const properties = this.selectedService.entities?.find(
+		const selectedEntity = this.selectedService.entities?.find(
 			(entity) => entity.name === this.localData.selectedEntityName
-		)?.properties;
-		this.localData.selectedEntityProperties.properties = properties || [];
-		this.localData.selectedEntityProperties.keyProperties =
-			this.selectedService.entities?.find(
-				(entity) => entity.name === this.localData.selectedEntityName
-			)?.keys || [];
+		);
+		
+		if (selectedEntity) {
+			this.localData.selectedEntityProperties.properties = selectedEntity.properties || [];
+			this.localData.selectedEntityProperties.keyProperties = selectedEntity.keys || [];
+			this.localData.selectedEntityProperties.navigationProperties = selectedEntity.navigationProperties || [];
 
-		this.localData.selectedEntityProperties.properties =
-			this.localData.selectedEntityProperties.properties.filter(
-				(property) =>
-					!this.localData.selectedEntityProperties.keyProperties.some(
-						(keyProperty) => keyProperty.name === property.name
-					)
-			);
+			this.localData.selectedEntityProperties.properties =
+				this.localData.selectedEntityProperties.properties.filter(
+					(property) =>
+						!this.localData.selectedEntityProperties.keyProperties.some(
+							(keyProperty) => keyProperty.name === property.name
+						)
+				);
+		}
 	}
 
 	/**
@@ -587,6 +591,7 @@ export default class OData extends BaseController {
 				entityName: this.localData.selectedEntityName,
 				keys: properties.keyProperties,
 				headers: this.getHeaders(),
+				expand: this.localData.selectedNavigationProperties.length > 0 ? this.localData.selectedNavigationProperties : undefined,
 			});
 			this.localData.response = JSON.stringify(data, null, 2);
 			this.setTableResponse(data);
@@ -621,6 +626,7 @@ export default class OData extends BaseController {
 				headers: headers,
 				top: this.localData.top,
 				skip: this.localData.skip,
+				expand: this.localData.selectedNavigationProperties.length > 0 ? this.localData.selectedNavigationProperties : undefined,
 			});
 			this.localData.response = JSON.stringify(response, null, 2);
 			this.setTableResponse(response);
@@ -1036,10 +1042,8 @@ export default class OData extends BaseController {
 	}
 
 	private resetEntityInputs() {
-		const propertiesVbox = this.getById("idPropertiesVBox") as VBox;
-		const keyPropertiesVbox = this.getById("idKeyPropertiesVBox") as VBox;
-		Util.resetInputs(propertiesVbox);
-		Util.resetInputs(keyPropertiesVbox);
+		this.localData.selectedNavigationProperties = [];
+		this.values = {};
 	}
 
 	private resetFunctionInputs() {
@@ -1343,6 +1347,26 @@ export default class OData extends BaseController {
 			(this.getView()?.getModel("recentlyUsedServices") as JSONModel).setProperty("/", filteredServices);
 		} catch (error) {
 			console.error("Error deleting recently used service:", error);
+		}
+	}
+
+	/**
+	 * Handle navigation property selection change
+	 */
+	onNavigationPropertyChange(event: CheckBox$SelectEvent) {
+		const checkbox = event.getSource();
+		const navigationPropertyName = checkbox.getBindingContext("local")?.getProperty("name");
+		const isSelected = checkbox.getSelected();
+		
+		if (isSelected && navigationPropertyName) {
+			if (!this.localData.selectedNavigationProperties.includes(navigationPropertyName)) {
+				this.localData.selectedNavigationProperties.push(navigationPropertyName);
+			}
+		} else if (!isSelected && navigationPropertyName) {
+			const index = this.localData.selectedNavigationProperties.indexOf(navigationPropertyName);
+			if (index > -1) {
+				this.localData.selectedNavigationProperties.splice(index, 1);
+			}
 		}
 	}
 }

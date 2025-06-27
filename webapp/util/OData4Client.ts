@@ -165,6 +165,7 @@ export default class OData4Client implements IODataClient {
 			entityName: string;
 			keys: Record<string, string | number | boolean>;
 			headers: Record<string, string>;
+			expand?: string[];
 		}
 	): Promise<object> {
 		const keyPath = Object.entries(options.keys)
@@ -224,11 +225,22 @@ export default class OData4Client implements IODataClient {
 				).maxLength,
 			}));
 
+			// Parse NavigationProperties
+			const navigationProperties = Array.from(
+				entityTypeNode.getElementsByTagName("NavigationProperty")
+			).map((navNode) => ({
+				name: navNode.getAttribute("Name") || "",
+				relationship: navNode.getAttribute("Relationship") || "",
+				fromRole: navNode.getAttribute("FromRole") || "",
+				toRole: navNode.getAttribute("ToRole") || ""
+			}));
+
 			entities.push({
 				name: entity.Name,
 				entityType: entityType,
 				properties: properties,
 				keys: propertyRefs,
+				navigationProperties: navigationProperties
 			});
 		}
 		return entities;
@@ -271,13 +283,18 @@ export default class OData4Client implements IODataClient {
 		headers: Record<string, string>;
 		top: number;
 		skip: number;
+		expand?: string[];
 	}): Promise<object> {
 		const binding = this.model.bindList(
 			"/" + options.entityName,
 			undefined,
-			[],
-			[],
-			{}
+			options.filters,
+			options.sorting,
+			{
+				$top: options.top,
+				$skip: options.skip,
+				...(options.expand && options.expand.length > 0 && { $expand: options.expand.join(',') })
+			}
 		);
 		const contexts = await binding.requestContexts();
 		return contexts.map((context) => context.getObject() as object);

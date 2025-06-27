@@ -40,7 +40,7 @@
                             <HBox>
                                 <Button
                                     icon="sap-icon://response"
-                                    tooltip="{i18n>ttl.viewResponse}"
+                                    tooltip="{i18n>lbl.viewResponse}"
                                     press=".onButtonViewResponsePress"
                                     class="sapUiSmallMarginEnd"
                                 />

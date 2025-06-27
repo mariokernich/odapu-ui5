@@ -12,12 +12,14 @@ export interface ReadEntityOptions {
 	headers: Record<string, string>;
 	top: number;
 	skip: number;
+	expand?: string[];
 }
 
 export interface GetEntityOptions {
 	entityName: string;
 	keys: Record<string, string | number | boolean>;
 	headers: Record<string, string>;
+	expand?: string[];
 }
 
 export interface CreateEntityOptions {

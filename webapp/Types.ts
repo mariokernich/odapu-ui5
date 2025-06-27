@@ -118,7 +118,9 @@ export type MainViewModel = {
 	selectedEntityProperties: {
 		properties: MetadataEntityProperty[];
 		keyProperties: MetadataEntityProperty[];
+		navigationProperties: MetadataNavigationProperty[];
 	};
+	selectedNavigationProperties: string[];
 	entityCount: number;
 	functionCount: number;
 	actionCount: number;
