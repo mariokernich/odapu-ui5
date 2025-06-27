@@ -5,7 +5,7 @@
     
         <Title
             titleStyle="H5"
-            text="Properties ({= ${local>/selectedEntityProperties/properties}.length })"
+            text="{i18n>lbl.properties} ({= ${local>/selectedEntityProperties/properties}.length })"
             visible="{= ${local>/selectedMethod} === 'POST' }"
         />
         <VBox
@@ -19,10 +19,10 @@
                 id="idPropertiesVBox"
             >
                 <VBox class="sapUiTinyMarginBottom sapUiSmallMarginBegin sapUiSmallMarginEnd">
-                    <Label text="{= ${local>maxLength} === 0 ? ${local>name} : ${local>name} + ' (length: ' + ${local>maxLength} + ')'}" />
+                    <Label text="{= ${local>maxLength} === 0 ? ${local>name} : ${local>name} + ' ({i18n>lbl.length}: ' + ${local>maxLength} + ')'}" />
                     <VBox>
                         <Input
-                            placeholder="Enter {local>name}..."
+                            placeholder="{i18n>ph.enterProperty} {local>name}"
                             maxLength="{local>maxLength}"
                             value="{propertyValues>/properties/{local>name}}"
                             change="onInputPropertyChange"

@@ -41,7 +41,13 @@
                         class="sapUiTinyMarginBottom"
                     >
                         <Label
-                            text="{i18n>lbl.recentlyUsed} ({= ${recentlyUsedServices>/}.length })"
+                            text="{i18n>lbl.recentlyUsedServices} ({= ${recentlyUsedServices>/}.length })"
+                        />
+                        <Button
+                            text="{i18n>btn.clearAllRecentlyUsed}"
+                            type="Transparent"
+                            press=".onButtonClearAllRecentlyUsedPress"
+                            tooltip="{i18n>msg.confirmClearAllRecentlyUsed}"
                         />
                     </HBox>
                     <VBox
@@ -67,7 +73,7 @@
                                 icon="sap-icon://delete"
                                 type="Transparent"
                                 press=".onButtonDeleteRecentlyUsedPress"
-                                tooltip="Remove from recently used"
+                                tooltip="{i18n>btn.deleteRecentlyUsed}"
                             />
                         </HBox>
                     </VBox>

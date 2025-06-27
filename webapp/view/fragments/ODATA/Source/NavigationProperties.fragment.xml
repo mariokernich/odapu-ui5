@@ -4,7 +4,7 @@
 >
     <Title
         titleStyle="H5"
-        text="Navigation Properties ({= ${local>/selectedEntityProperties/navigationProperties}.length })"
+        text="{i18n>lbl.navigationProperties} ({= ${local>/selectedEntityProperties/navigationProperties}.length })"
         visible="{= ${local>/resourceType} === 'entity' &amp;&amp; ${local>/selectedEntityName} !== '' &amp;&amp; ( ${local>/selectedMethod} === 'GET' || ${local>/selectedMethod} === 'GETBY' ) &amp;&amp; ${local>/selectedEntityProperties/navigationProperties}.length > 0 }"
     />
     <VBox
