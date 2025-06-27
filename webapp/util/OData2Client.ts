@@ -102,8 +102,7 @@ export default class OData2Client implements IODataClient {
 				properties: properties,
 			});
 		}
-
-		return complexTypes;
+		return complexTypes.filter((entity) => !entity.name.startsWith("SAP__"));
 	}
 
 	destroy(): void {}

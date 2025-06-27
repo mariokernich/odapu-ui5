@@ -120,7 +120,7 @@ export default class OData4Client implements IODataClient {
 			});
 		}
 
-		return complexTypes;
+		return complexTypes.filter((entity) => !entity.name.startsWith("SAP__"));
 	}
 
 	getAssociations(): MetadataAssociation[] {
