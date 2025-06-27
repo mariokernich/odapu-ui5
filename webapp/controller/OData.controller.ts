@@ -126,6 +126,59 @@ export default class OData extends BaseController {
 		this.getView()?.setModel(new JSONModel([], true), "entitySorting");
 		this.getView()?.setModel(new JSONModel([], true), "requestHistory");
 		this.getView()?.setModel(new JSONModel([], true), "requestHeaders");
+		this.getView()?.setModel(new JSONModel(this.getRecentlyUsedServices(), true), "recentlyUsedServices");
+	}
+
+	/**
+	 * Get recently used services from localStorage
+	 */
+	private getRecentlyUsedServices(): ServiceEntity[] {
+		try {
+			const stored = localStorage.getItem("odpu_recently_used_services");
+			return stored ? JSON.parse(stored) : [];
+		} catch (error) {
+			console.error("Error loading recently used services:", error);
+			return [];
+		}
+	}
+
+	/**
+	 * Save service to recently used list
+	 */
+	private saveRecentlyUsedService(service: ServiceEntity): void {
+		try {
+			const recentServices = this.getRecentlyUsedServices();
+			
+			// Remove if already exists (to avoid duplicates)
+			const filteredServices = recentServices.filter(s => 
+				s.ServicePath !== service.ServicePath || s.ODataType !== service.ODataType
+			);
+			
+			// Add to beginning of array
+			filteredServices.unshift(service);
+			
+			// Keep only last 10 items
+			const limitedServices = filteredServices.slice(0, 10);
+			
+			// Save to localStorage
+			localStorage.setItem("odpu_recently_used_services", JSON.stringify(limitedServices));
+			
+			// Update model
+			(this.getView()?.getModel("recentlyUsedServices") as JSONModel).setProperty("/", limitedServices);
+			(this.getView()?.getModel("recentlyUsedServices") as JSONModel).refresh(true);
+		} catch (error) {
+			console.error("Error saving recently used service:", error);
+		}
+	}
+
+	/**
+	 * Handle selection of a recently used service
+	 */
+	onRecentlyUsedServicePress(event: Button$PressEvent) {
+		const service = event.getSource().getBindingContext("recentlyUsedServices")?.getObject() as ServiceEntity;
+		if (service) {
+			void this.loadService(service);
+		}
 	}
 
 	/**
@@ -151,6 +204,27 @@ export default class OData extends BaseController {
 	 */
 	onSelectService() {
 		void this.handleServiceSelection();
+	}
+
+	/**
+	 * Event handler: Choose service button pressed
+	 */
+	onButtonChooseServicePress() {
+		void this.handleServiceSelection();
+	}
+
+	/**
+	 * Event handler: Change service button pressed
+	 */
+	onButtonChangeServicePress() {
+		void this.handleServiceSelection();
+	}
+
+	/**
+	 * Event handler: Show metadata button pressed
+	 */
+	onButtonShowMetadataPress() {
+		this.onShowMetadata();
 	}
 
 	/**
@@ -348,6 +422,11 @@ export default class OData extends BaseController {
 				this.localData.selectedActionName =
 					this.localData.selectedServiceActions[0].name;
 				this.handleActionChanged();
+			}
+
+			// Save to recently used services if service is not null
+			if (this.selectedService.service) {
+				this.saveRecentlyUsedService(this.selectedService.service);
 			}
 		} finally {
 			this.setBusy(false);
@@ -1215,5 +1294,55 @@ export default class OData extends BaseController {
 
 	public setTitle(title: string) {
 		throw new Error("Not implemented: " + title);
+	}
+
+	/**
+	 * Event handler: Recently used service button pressed
+	 */
+	onServicePathButtonPress(event: Button$PressEvent) {
+		const service = event.getSource().getBindingContext("recentlyUsedServices")?.getObject() as ServiceEntity;
+		if (service) {
+			void this.loadService(service);
+		}
+	}
+
+	/**
+	 * Event handler: Service name button pressed (recently used)
+	 */
+	onServiceNameButtonPress(event: Button$PressEvent) {
+		const service = event.getSource().getBindingContext("recentlyUsedServices")?.getObject() as ServiceEntity;
+		if (service) {
+			void this.loadService(service);
+		}
+	}
+
+	/**
+	 * Event handler: Delete individual recently used service
+	 */
+	onButtonDeleteRecentlyUsedPress(event: Button$PressEvent) {
+		const service = event.getSource().getParent()?.getBindingContext("recentlyUsedServices")?.getObject() as ServiceEntity;
+		if (service) {
+			this.deleteRecentlyUsedService(service);
+		}
+	}
+
+	/**
+	 * Delete a specific service from recently used list
+	 */
+	private deleteRecentlyUsedService(serviceToDelete: ServiceEntity): void {
+		try {
+			const recentServices = this.getRecentlyUsedServices();
+			const filteredServices = recentServices.filter(s => 
+				s.ServicePath !== serviceToDelete.ServicePath || s.ODataType !== serviceToDelete.ODataType
+			);
+			
+			// Save to localStorage
+			localStorage.setItem("odpu_recently_used_services", JSON.stringify(filteredServices));
+			
+			// Update model
+			(this.getView()?.getModel("recentlyUsedServices") as JSONModel).setProperty("/", filteredServices);
+		} catch (error) {
+			console.error("Error deleting recently used service:", error);
+		}
 	}
 }

@@ -22,12 +22,57 @@
                     />
                 </VBox>
             </VBox>
-            <Button
-                text="{i18n>btn.chooseService}"
-                press="onSelectService"
-                enabled="{= ${global>/AppBusy} === false }"
-                visible="{= ${selectedService>/service} === null }"
-            />
+            <VBox visible="{= ${selectedService>/service} === null }">
+                <Button
+                    text="{i18n>btn.chooseService}"
+                    press=".onButtonChooseServicePress"
+                    enabled="{= ${global>/AppBusy} === false }"
+                    width="100%"
+                />
+                
+                <!-- Recently Used Services -->
+                <VBox
+                    visible="{= ${recentlyUsedServices>/}.length > 0 }"
+                    class="sapUiSmallMarginTop"
+                >
+                    <HBox
+                        justifyContent="SpaceBetween"
+                        alignItems="Center"
+                        class="sapUiTinyMarginBottom"
+                    >
+                        <Label
+                            text="{i18n>lbl.recentlyUsed} ({= ${recentlyUsedServices>/}.length })"
+                        />
+                    </HBox>
+                    <VBox
+                        items="{
+                            path: 'recentlyUsedServices>/',
+                            templateShareable: false
+                        }"
+                    >
+                        <HBox
+                            justifyContent="SpaceBetween"
+                            alignItems="Center"
+                            class="sapUiTinyMarginBottom"
+                        >
+                            <Button
+                                text="{recentlyUsedServices>ServiceName}"
+                                tooltip="ODATA {recentlyUsedServices>ODataType} - {recentlyUsedServices>ServicePath}"
+                                press=".onServiceNameButtonPress"
+                                type="Transparent"
+                                icon="sap-icon://history"
+                                class="sapUiTinyMarginEnd"
+                            />
+                            <Button
+                                icon="sap-icon://delete"
+                                type="Transparent"
+                                press=".onButtonDeleteRecentlyUsedPress"
+                                tooltip="Remove from recently used"
+                            />
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </VBox>
             <HBox
                 visible="{= ${selectedService>/service} !== null }"
                 alignItems="Center"
@@ -37,7 +82,7 @@
             >
                 <Button
                     text="{i18n>btn.changeService}"
-                    press=".onSelectService"
+                    press=".onButtonChangeServicePress"
                     width="100%"
                     class="sapUiTinyMarginEnd"
                 />
@@ -45,7 +90,7 @@
                     text="{i18n>btn.showMetadata}"
                     width="100%"
                     class="sapUiTinyMarginBegin"
-                    press=".onShowMetadata"
+                    press=".onButtonShowMetadataPress"
                 />
             </HBox>
         </form:content>
