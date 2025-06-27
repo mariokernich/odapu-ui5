@@ -16,7 +16,6 @@ import { Model$RequestFailedEvent } from "sap/ui/model/Model";
 import MessageBox from "sap/m/MessageBox";
 import Sorter from "sap/ui/model/Sorter";
 import Util from "./Util";
-import Relationship from "sap/gantt/simple/Relationship";
 
 /**
  * @namespace de.kernich.odpu.util
