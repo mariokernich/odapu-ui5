@@ -2,7 +2,9 @@
     xmlns="sap.m"
     xmlns:core="sap.ui.core"
     xmlns:codeeditor="sap.ui.codeeditor"
+    xmlns:layout="sap.ui.layout"
     xmlns:odpu="de.kernich.odpu.control"
+    xmlns:cssgrid="sap.ui.layout.cssgrid"
 >
     <Dialog
         title="{i18n>dlg.title.metadata}"
@@ -51,40 +53,19 @@
                     headerMode="Inline"
                 >
                     <items>
-
-                        <IconTabFilter
-                        text="All ({= ${dialog>/entities}.length + ${dialog>/functions}.length + ${dialog>/actions}.length + ${dialog>/complexTypes}.length })"
-                        key="all"
-                        icon="sap-icon://list"
-                    >
-                        <content>
-                            <odpu:EntityPreview
-                                entities="{dialog>/entities}"
-                                visible="{= ${dialog>/entities}.length > 0}"
-                            />
-                            <odpu:FunctionImportPreview
-                                functions="{dialog>/functions}"
-                                visible="{= ${dialog>/functions}.length > 0}"
-                            />
-                            <odpu:ActionPreview
-                                actions="{dialog>/actions}"
-                                visible="{= ${dialog>/actions}.length > 0}"
-                            />
-                            <odpu:ComplexTypePreview
-                                complexTypes="{dialog>/complexTypes}"
-                                visible="{= ${dialog>/complexTypes}.length > 0}"
-                            />
-                        </content>
-                    </IconTabFilter>
                         <IconTabFilter
                             text="Entitäten ({= ${dialog>/entities}.length })"
                             key="entities"
                             icon="sap-icon://database"
                         >
                             <content>
-                                <odpu:EntityPreview
-                                    entities="{dialog>/entities}"
-                                />
+                                <cssgrid:CSSGrid
+                                    items="{path: 'dialog>/entities'}"
+                                    gridTemplateColumns="1fr 1fr 1fr 1fr"
+                                    gridGap="20px"
+                                >
+                                    <odpu:EntityPreview entity="{dialog>}" />
+                                </cssgrid:CSSGrid>
                             </content>
                         </IconTabFilter>
 
@@ -94,9 +75,15 @@
                             icon="sap-icon://syntax"
                         >
                             <content>
-                                <odpu:FunctionImportPreview
-                                    functions="{dialog>/functions}"
-                                />
+                                <cssgrid:CSSGrid
+                                    items="{path: 'dialog>/functions'}"
+                                    gridTemplateColumns="1fr 1fr 1fr 1fr"
+                                    gridGap="20px"
+                                >
+                                    <odpu:FunctionImportPreview
+                                        function="{dialog>}"
+                                    />
+                                </cssgrid:CSSGrid>
                             </content>
                         </IconTabFilter>
 
@@ -106,9 +93,13 @@
                             icon="sap-icon://play"
                         >
                             <content>
-                                <odpu:ActionPreview
-                                    actions="{dialog>/actions}"
-                                />
+                                <cssgrid:CSSGrid
+                                    items="{path: 'dialog>/actions'}"
+                                    gridTemplateColumns="1fr 1fr 1fr 1fr"
+                                    gridGap="20px"
+                                >
+                                    <odpu:ActionPreview action="{dialog>}" />
+                                </cssgrid:CSSGrid>
                             </content>
                         </IconTabFilter>
 
@@ -118,9 +109,15 @@
                             icon="sap-icon://puzzle"
                         >
                             <content>
-                                <odpu:ComplexTypePreview
-                                    complexTypes="{dialog>/complexTypes}"
-                                />
+                                <cssgrid:CSSGrid
+                                    items="{path: 'dialog>/complexTypes'}"
+                                    gridTemplateColumns="1fr 1fr 1fr 1fr"
+                                    gridGap="20px"
+                                >
+                                    <odpu:ComplexTypePreview
+                                        complexType="{dialog>}"
+                                    />
+                                </cssgrid:CSSGrid>
                             </content>
                         </IconTabFilter>
                     </items>

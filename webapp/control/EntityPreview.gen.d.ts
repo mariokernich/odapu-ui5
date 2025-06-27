@@ -7,13 +7,13 @@ declare module "./EntityPreview" {
      * Interface defining the settings object used in constructor calls
      */
     interface $EntityPreviewSettings extends $ControlSettings {
-        entities?: object | PropertyBindingInfo | `{${string}}`;
+        entity?: object | PropertyBindingInfo | `{${string}}`;
     }
 
     export default interface EntityPreview {
 
-        // property: entities
-        getEntities(): object;
-        setEntities(entities: object): this;
+        // property: entity
+        getEntity(): object;
+        setEntity(entity: object): this;
     }
 }

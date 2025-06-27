@@ -43,7 +43,10 @@
 			"desktop": true,
 			"tablet": true,
 			"phone": true
-		}
+		},
+		"css": [
+			"css/EntityPreview.css"
+		]
 	},
 
 	"sap.ui5": {

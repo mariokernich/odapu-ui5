@@ -7,13 +7,13 @@ declare module "./FunctionImportPreview" {
      * Interface defining the settings object used in constructor calls
      */
     interface $FunctionImportPreviewSettings extends $ControlSettings {
-        functions?: object | PropertyBindingInfo | `{${string}}`;
+        function?: object | PropertyBindingInfo | `{${string}}`;
     }
 
     export default interface FunctionImportPreview {
 
-        // property: functions
-        getFunctions(): object;
-        setFunctions(functions: object): this;
+        // property: function
+        getFunction(): object;
+        setFunction(function: object): this;
     }
 }

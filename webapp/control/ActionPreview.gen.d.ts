@@ -8,13 +8,13 @@ declare module "./ActionPreview" {
      * Interface defining the settings object used in constructor calls
      */
     interface $ActionPreviewSettings extends $ControlSettings {
-        actions?: MetadataAction[] | PropertyBindingInfo | `{${string}}`;
+        action?: MetadataAction | PropertyBindingInfo | `{${string}}`;
     }
 
     export default interface ActionPreview {
 
-        // property: actions
-        getActions(): MetadataAction[];
-        setActions(actions: MetadataAction[]): this;
+        // property: action
+        getAction(): MetadataAction;
+        setAction(action: MetadataAction): this;
     }
 }
