@@ -39,6 +39,7 @@ import { Input$ChangeEvent } from "sap/ui/webc/main/Input";
 import Sorter from "sap/ui/model/Sorter";
 import Context from "sap/ui/model/odata/v2/Context";
 import { CheckBox$SelectEvent } from "sap/m/CheckBox";
+import SoundManager from "../util/SoundManager";
 
 /**
  * @namespace de.kernich.odpu.controller
@@ -544,6 +545,7 @@ export default class OData extends BaseController {
 			if (
 				Object.values(properties.keyProperties).some((value) => value === "")
 			) {
+				await SoundManager.FireError();
 				MessageBox.error(
 					this.component.getText("msg.enterKeyProperties", [Object.keys(properties.keyProperties).join(", ")])
 				);
@@ -580,6 +582,7 @@ export default class OData extends BaseController {
 				const emptyKeyProperties = Object.keys(properties.keyProperties).filter(
 					(key) => properties.keyProperties[key] === ""
 				);
+				await SoundManager.FireError();
 				MessageBox.error(
 					this.component.getText("msg.enterKeyProperties", [emptyKeyProperties.join(", ")])
 				);

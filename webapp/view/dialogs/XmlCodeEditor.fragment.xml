@@ -57,6 +57,7 @@
                             text="Entitäten ({= ${dialog>/entities}.length })"
                             key="entities"
                             icon="sap-icon://database"
+                            enabled="{= ${dialog>/entities}.length > 0 }"
                         >
                             <content>
                                 <cssgrid:CSSGrid
@@ -73,6 +74,7 @@
                             text="Function Imports ({= ${dialog>/functions}.length })"
                             key="functions"
                             icon="sap-icon://syntax"
+                            enabled="{= ${dialog>/functions}.length > 0 }"
                         >
                             <content>
                                 <cssgrid:CSSGrid
@@ -91,6 +93,7 @@
                             text="Actions ({= ${dialog>/actions}.length })"
                             key="actions"
                             icon="sap-icon://play"
+                            enabled="{= ${dialog>/actions}.length > 0 }"
                         >
                             <content>
                                 <cssgrid:CSSGrid
@@ -107,6 +110,7 @@
                             text="Complex Types ({= ${dialog>/complexTypes}.length })"
                             key="complexTypes"
                             icon="sap-icon://puzzle"
+                            enabled="{= ${dialog>/complexTypes}.length > 0 }"
                         >
                             <content>
                                 <cssgrid:CSSGrid

@@ -11,11 +11,11 @@ import {
 	MetadataComplexType,
 } from "../Types";
 import ODataHelper from "./ODataHelper";
-import Context from "sap/ui/model/odata/v2/Context";
 import { Model$RequestFailedEvent } from "sap/ui/model/Model";
 import MessageBox from "sap/m/MessageBox";
 import Sorter from "sap/ui/model/Sorter";
 import Util from "./Util";
+import SoundManager from "./SoundManager";
 
 /**
  * @namespace de.kernich.odpu.util
@@ -23,14 +23,16 @@ import Util from "./Util";
 export default class OData2Client implements IODataClient {
 	private model: ODataModelV2;
 	private serviceUrl: string;
-	private metadataText: string;
-	private metadataXml: XMLDocument;
+	private metadataText?: string;
+	private metadataXml?: XMLDocument;
 
 	constructor(serviceUrl: string) {
 		this.serviceUrl = serviceUrl;
 		this.model = new ODataModelV2(serviceUrl, {});
 
 		this.model.attachRequestFailed({}, (event: Model$RequestFailedEvent) => {
+			void SoundManager.FireError();
+
 			const parameters = event.getParameters() as {
 				response: {
 					responseText: string;
@@ -78,7 +80,7 @@ export default class OData2Client implements IODataClient {
 		const complexTypes: MetadataComplexType[] = [];
 
 		const complexTypeNodes = Array.from(
-			this.metadataXml.getElementsByTagName("ComplexType")
+			this.metadataXml?.getElementsByTagName("ComplexType") || []
 		);
 
 		for (const complexTypeNode of complexTypeNodes) {
@@ -120,6 +122,8 @@ export default class OData2Client implements IODataClient {
 				error: (error: Error) => reject(error),
 			});
 		});
+
+		await SoundManager.FireSuccess();
 	}
 	async getEntity(
 		options: {
@@ -140,7 +144,7 @@ export default class OData2Client implements IODataClient {
 			urlParameters.$expand = options.expand.join(',');
 		}
 		
-		return await new Promise((resolve, reject) => {
+		const result = await new Promise((resolve, reject) => {
 			this.model.read(`/${options.entityName}(${keyPath})`, {
 				success: (data: object) => {
 					resolve(data);
@@ -151,6 +155,10 @@ export default class OData2Client implements IODataClient {
 				urlParameters: Object.keys(urlParameters).length > 0 ? urlParameters : undefined,
 			});
 		});
+
+		await SoundManager.FireSuccess();
+
+		return result as object;
 	}
 
 	async deleteEntity(
@@ -168,6 +176,8 @@ export default class OData2Client implements IODataClient {
 				error: (error: Error) => reject(error),
 			});
 		});
+
+		await SoundManager.FireSuccess();
 	}
 
 	async initAsync() {
@@ -187,7 +197,7 @@ export default class OData2Client implements IODataClient {
 		const entities: MetadataEntity[] = [];
 
 		const entitySets = Array.from(
-			this.metadataXml.getElementsByTagName("EntitySet")
+			this.metadataXml?.getElementsByTagName("EntitySet") || []
 		).map((node) => ({
 			Name: node.getAttribute("Name"),
 			EntityType: node.getAttribute("EntityType"),
@@ -199,7 +209,7 @@ export default class OData2Client implements IODataClient {
 				entityType = entityType.split(".").pop();
 			}
 			const entityTypeNode = Array.from(
-				this.metadataXml.getElementsByTagName("EntityType")
+				this.metadataXml?.getElementsByTagName("EntityType") || []
 			).find((node) => {
 				return node.getAttribute("Name") === entityType;
 			});
@@ -253,7 +263,7 @@ export default class OData2Client implements IODataClient {
 
 	getAssociations(): MetadataAssociation[] {
 		const associations: MetadataAssociation[] = [];
-		const associationNodes = Array.from(this.metadataXml.getElementsByTagName("Association"));
+		const associationNodes = Array.from(this.metadataXml?.getElementsByTagName("Association") || []);
 
 		for (const assocNode of associationNodes) {
 			const name = assocNode.getAttribute("Name") || "";
@@ -305,14 +315,14 @@ export default class OData2Client implements IODataClient {
 	}
 
 	getMetadataText(): string {
-		return this.metadataText;
+		return this.metadataText || "";
 	}
 	getMetadataXml(): XMLDocument {
-		return this.metadataXml;
+		return this.metadataXml || new XMLDocument();
 	}
 	getFunctions(): MetadataFunction[] {
 		const functionImports = Array.from(
-			this.metadataXml.getElementsByTagName("FunctionImport")
+			this.metadataXml?.getElementsByTagName("FunctionImport") || []
 		).map((node) => ({
 			Name: node.getAttribute("Name"),
 			ReturnType: node.getAttribute("ReturnType"),
@@ -324,7 +334,7 @@ export default class OData2Client implements IODataClient {
 					type: paramNode.getAttribute("Type"),
 					nullable: paramNode.getAttribute("Nullable"),
 					maxLength: ODataHelper.getMaxLength(
-						paramNode.getAttribute("MaxLength")
+						paramNode.getAttribute("MaxLength") || ""
 					),
 				})
 			),
@@ -363,7 +373,7 @@ export default class OData2Client implements IODataClient {
 			urlParameters.$expand = options.expand.join(',');
 		}
 		
-		return await new Promise((resolve, reject) => {
+		const result = await new Promise((resolve, reject) => {
 			this.model.read(`/${options.entityName}`, {
 				success: (data: object) => {
 					resolve(data);
@@ -376,6 +386,10 @@ export default class OData2Client implements IODataClient {
 				urlParameters: urlParameters,
 			});
 		});
+
+		await SoundManager.FireSuccess();
+
+		return result as object;
 	}
 
 	async executeFunction(options: {
@@ -383,7 +397,7 @@ export default class OData2Client implements IODataClient {
 		parameters: Record<string, string | number | boolean>;
 		method: "GET" | "POST";
 	}): Promise<unknown> {
-		return await new Promise((resolve, reject) => {
+		const result = await new Promise((resolve, reject) => {
 			this.model.callFunction(`/${options.functionName}`, {
 				urlParameters: options.parameters,
 				method: options.method,
@@ -391,6 +405,10 @@ export default class OData2Client implements IODataClient {
 				error: (error: Error) => reject(error),
 			});
 		});
+
+		await SoundManager.FireSuccess();
+
+		return result as object;
 	}
 
 	executeAction(options: {
