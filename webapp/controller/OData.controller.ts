@@ -634,22 +634,14 @@ export default class OData extends BaseController {
 			this.localData.response = JSON.stringify(response, null, 2);
 			this.setTableResponse(response);
 
-			const history = (
-				this.getView()?.getModel("requestHistory") as JSONModel
-			).getProperty("/") as RequestHistory[];
-
-			history.push({
+			this.addToHistory({
 				method: "READ",
 				entity: this.localData.selectedEntityName,
-				timestamp: new Date().toISOString(),
 				statusCode: 200,
 				response: this.localData.response,
+				type: "entity",
+				name: this.localData.selectedEntityName,
 			});
-
-			(this.getView()?.getModel("requestHistory") as JSONModel).setProperty(
-				"/",
-				history
-			);
 		} finally {
 			this.setBusy(false);
 		}
@@ -794,6 +786,15 @@ export default class OData extends BaseController {
 
 			this.localData.response = JSON.stringify(response, null, 2);
 
+			this.addToHistory({
+				method: fn.method,
+				entity: fn.name,
+				statusCode: 200,
+				response: this.localData.response,
+				type: "function",
+				name: fn.name,
+			});
+
 			MessageToast.show(this.component.getText("msg.functionExecuted"));
 		} finally {
 			this.setBusy(false);
@@ -816,6 +817,15 @@ export default class OData extends BaseController {
 
 			this.localData.response = JSON.stringify(response, null, 2);
 			
+			this.addToHistory({
+				method: "POST",
+				entity: action.name,
+				statusCode: 200,
+				response: this.localData.response,
+				type: "action",
+				name: action.name,
+			});
+
 			MessageToast.show(this.component.getText("msg.actionExecuted"));
 		} finally {
 			this.setBusy(false);
@@ -1138,6 +1148,7 @@ export default class OData extends BaseController {
 		const binding = event.getSource().getBindingContext("requestHistory") as Context;
 		const historyItem = binding.getObject() as RequestHistory;
 		this.localData.response = historyItem.response;
+		(this.getView()?.getModel("local") as JSONModel).setProperty("/dataViewMode", "json");
 	}
 
 	/**
@@ -1371,5 +1382,21 @@ export default class OData extends BaseController {
 				this.localData.selectedNavigationProperties.splice(index, 1);
 			}
 		}
+	}
+
+	private addToHistory(entry: Omit<RequestHistory, 'timestamp'>) {
+		const history = (
+			this.getView()?.getModel("requestHistory") as JSONModel
+		).getProperty("/") as RequestHistory[];
+
+		history.push({
+			...entry,
+			timestamp: new Date().toISOString(),
+		});
+
+		(this.getView()?.getModel("requestHistory") as JSONModel).setProperty(
+			"/",
+			history
+		);
 	}
 }

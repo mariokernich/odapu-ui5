@@ -153,6 +153,9 @@ export type RequestHistory = {
 	timestamp: string;
 	statusCode: number;
 	response: string;
+	type: "entity" | "function" | "action";
+	name: string; // entity name, function name, or action name
+	duration?: number;
 };
 
 export type FilterRecord = {

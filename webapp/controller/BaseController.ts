@@ -8,12 +8,14 @@ import Router from "sap/ui/core/routing/Router";
 import History from "sap/ui/core/routing/History";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import Component from "../Component";
+import Formatter from "../model/Formatter";
 
 /**
  * @namespace de.kernich.odpu.controller
  */
 export default abstract class BaseController extends Controller {
-	public component: Component;
+	public component!: Component;
+	public formatter = Formatter;
 
 	public onInit(): void {
 		this.component = this.getOwnerComponent();
