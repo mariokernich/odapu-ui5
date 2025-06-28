@@ -1501,4 +1501,34 @@ export default class OData extends BaseController {
 				break;
 		}
 	}
+
+	onButtonClearAllRecentlyUsedPress() {
+		MessageBox.confirm(
+			this.component.getText("msg.confirmClearAllRecentlyUsed"),
+			{
+				onClose: (action: string) => {
+					if (action === MessageBox.Action.OK) {
+						this.clearAllRecentlyUsedServices();
+					}
+				},
+			}
+		);
+	}
+
+	private clearAllRecentlyUsedServices() {
+		try {
+			// Clear from localStorage
+			localStorage.removeItem("odpu_recently_used_services");
+
+			// Update model
+			(
+				this.getView()?.getModel("recentlyUsedServices") as JSONModel
+			).setProperty("/", []);
+
+			MessageToast.show(this.component.getText("msg.servicesRefreshed"));
+		} catch (error) {
+			console.error("Error clearing all recently used services:", error);
+			MessageBox.error("Error clearing recently used services");
+		}
+	}
 }
