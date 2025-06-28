@@ -19,10 +19,10 @@
                 id="idPropertiesVBox"
             >
                 <VBox class="sapUiTinyMarginBottom sapUiSmallMarginBegin sapUiSmallMarginEnd">
-                    <Label text="{= ${local>maxLength} === 0 ? ${local>name} : ${local>name} + ' ({i18n>lbl.length}: ' + ${local>maxLength} + ')'}" />
+                    <Label text="{= ${local>maxLength} === 0 ? ${local>name} : ${local>name} + ' (length: ' + ${local>maxLength} + ')'}" />
                     <VBox>
                         <Input
-                            placeholder="{i18n>ph.enterProperty} {local>name}"
+                            placeholder="Enter {local>name}..."
                             maxLength="{local>maxLength}"
                             value="{propertyValues>/properties/{local>name}}"
                             change="onInputPropertyChange"

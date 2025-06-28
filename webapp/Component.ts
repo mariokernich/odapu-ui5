@@ -8,6 +8,7 @@ import { Model$RequestFailedEvent } from "sap/ui/model/Model";
 import MessageBox from "sap/m/MessageBox";
 import ResourceModel from "sap/ui/model/resource/ResourceModel";
 import ResourceBundle from "sap/base/i18n/ResourceBundle";
+import SoundManager from "./util/SoundManager";
 
 /**
  * @namespace de.kernich.odpu
@@ -39,6 +40,9 @@ export default class Component extends UIComponent {
 		this.registerErrorHandler(this.model);
 		this.setIconModel();
 
+		// Initialize SoundManager to preload audio files
+		SoundManager.initialize();
+
 		this.bundle = await (this.getModel("i18n") as ResourceModel).getResourceBundle();
 
 		this.getRouter().initialize();
@@ -58,7 +62,7 @@ export default class Component extends UIComponent {
 				const parser = new DOMParser();
 				const xmlDoc = parser.parseFromString(responseText, "text/xml");
 				const messageNode = xmlDoc.getElementsByTagName("message")[0];
-				if (messageNode) {
+				if (messageNode && messageNode.textContent) {
 					MessageBox.error(messageNode.textContent);
 				} else {
 					MessageBox.error("Unknown error occurred");
