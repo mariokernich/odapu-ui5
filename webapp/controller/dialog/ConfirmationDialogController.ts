@@ -11,11 +11,11 @@ export default class ConfirmationDialogController extends DialogController {
 
     public onConfirm(): void {
         this.data.confirmed = true;
-        this.onConfirm();
+        super.onConfirm();
     }
 
     public onCancel(): void {
         this.data.confirmed = false;
-        this.onCancel();
+        super.onCancel();
     }
 } 
