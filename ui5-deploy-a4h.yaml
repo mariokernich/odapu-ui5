@@ -18,7 +18,9 @@ builder:
     - name: deploy-to-abap
       afterTask: uglify
       configuration:
-        log: 3
+        log: 5
+        verbose: true
+        compress: true
         target:
           url: http://vhcala4hci:50000
           client: 001
