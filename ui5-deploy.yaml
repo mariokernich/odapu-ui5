@@ -16,11 +16,11 @@ builder:
     - name: ui5-task-flatten-library
       afterTask: generateResourcesJson
     - name: deploy-to-abap
-      afterTask: uglify
+      afterTask: generateResourcesJson
       configuration:
         log: 3
         verbose: false
-        compress: true
+        compress: false
         target:
           url: http://kernich.int:50101
           destination: EWM
