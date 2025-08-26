@@ -22,3 +22,7 @@ archive.zip
 mta_archives/
 
 *.mta
+
+
+webapp/thirdparty
+.ui5-tooling-modules

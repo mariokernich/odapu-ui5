@@ -8,6 +8,7 @@ import ODataModel from "sap/ui/model/odata/v2/ODataModel";
  */
 export default class ODataRequests extends ManagedObject {
 	private model: ODataModel;
+	private static readonly CACHE_KEY = "odpu_cached_services";
 
 	constructor(model: ODataModel) {
 		super();
@@ -18,10 +19,34 @@ export default class ODataRequests extends ManagedObject {
 		return this.model;
 	}
 
-	async getServices(): Promise<ServiceEntity[]> {
+	private static getCachedServices(): ServiceEntity[] | null {
+		const cachedData = localStorage.getItem(ODataRequests.CACHE_KEY);
+		if (!cachedData) {
+			return null;
+		}
+		try {
+			return JSON.parse(cachedData) as ServiceEntity[];
+		} catch {
+			return null;
+		}
+	}
+
+	private static setCachedServices(services: ServiceEntity[]): void {
+		localStorage.setItem(ODataRequests.CACHE_KEY, JSON.stringify(services));
+	}
+
+	async getServices(options: { refresh: boolean } = { refresh: false }): Promise<ServiceEntity[]> {
+		if (!options.refresh) {
+			const cachedServices = ODataRequests.getCachedServices();
+			if (cachedServices) {
+				return cachedServices;
+			}
+		}
+
 		return new Promise((resolve, reject) => {
 			this.model.read("/ODataService", {
 				success: (data: { results: ServiceEntity[] }) => {
+					ODataRequests.setCachedServices(data.results);
 					resolve(data.results);
 				},
 				error: reject,

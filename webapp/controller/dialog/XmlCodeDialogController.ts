@@ -1,17 +1,32 @@
 import MessageToast from "sap/m/MessageToast";
 import DialogController from "../../util/DialogController";
 import Util from "../../util/Util";
+import IODataClient from "../../util/IODataClient";
 
 /**
  * @namespace de.kernich.odpu.controller.dialog
  */
 export default class XmlCodeDialogController extends DialogController {
-    data = {
+    data: {
+        xml: string;
+        viewMode: "xml" | "mermaid";
+        selectedType: "entities" | "functions" | "actions" | "complexTypes" | "all";
+        odataClient: IODataClient | null;
+    } = {
         xml: "",
+        viewMode: "xml",
+        selectedType: "entities",
+        odataClient: null
     }
+
+    public onInit(): void {
+        
+    }
+
+
     onCopy() {
         void Util.copy2Clipboard(this.data.xml);
-        MessageToast.show("Copied to clipboard");
+        MessageToast.show(this.getText("msg.copiedToClipboard"));
     }
 
     onDownload() {

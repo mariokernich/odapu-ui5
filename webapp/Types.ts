@@ -29,7 +29,43 @@ export type MetadataEntity = {
 	entityType: string;
 	properties: MetadataEntityProperty[];
 	keys: MetadataEntityProperty[];
+	navigationProperties: MetadataNavigationProperty[];
 };
+
+export type MetadataNavigationProperty = {
+	name: string;
+	relationship: string;
+	fromRole: string;
+	toRole: string;
+}
+
+export type MetadataAssociation = {
+	name: string;
+	end: MetadataAssociationEnd[];
+	referentialConstraint?: ReferentialConstraint
+}
+
+export type MetadataAssociationEnd = {
+	type: string;
+	multiplicity: string;
+	role: string;
+	onDeleteAction?: string;
+}
+
+export type ReferentialConstraint = {
+	principal: {
+		role: string;
+		propertyRef: {
+			name: string;
+		}[];
+	}[];
+	dependent: {
+		role: string;
+		propertyRef: {
+			name: string;
+		}[];
+	};
+}
 
 export type MetadataFunction = {
 	name: string;
@@ -49,6 +85,11 @@ export type MetadataAction = {
 	}[];
 	returnType?: string;
 	entitySetPath?: string;
+};
+
+export type MetadataComplexType = {
+	name: string;
+	properties: MetadataEntityProperty[];
 };
 
 export type MetadataFunctionMethod = "GET" | "POST";
@@ -71,12 +112,15 @@ export type MainViewModel = {
 	selectedFunctionName: string;
 	response: string;
 	selectedMethod: string;
+	selectedActionName: string;
 	selectedServiceFunctions: MetadataFunction[];
 	selectedServiceActions: MetadataAction[];
 	selectedEntityProperties: {
 		properties: MetadataEntityProperty[];
 		keyProperties: MetadataEntityProperty[];
+		navigationProperties: MetadataNavigationProperty[];
 	};
+	selectedNavigationProperties: string[];
 	entityCount: number;
 	functionCount: number;
 	actionCount: number;
@@ -109,6 +153,9 @@ export type RequestHistory = {
 	timestamp: string;
 	statusCode: number;
 	response: string;
+	type: "entity" | "function" | "action";
+	name: string; // entity name, function name, or action name
+	duration?: number;
 };
 
 export type FilterRecord = {

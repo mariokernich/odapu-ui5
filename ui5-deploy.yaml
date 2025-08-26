@@ -4,7 +4,7 @@ metadata:
 type: library
 framework:
   name: SAPUI5
-  version: 1.90.6
+  version: 1.108.44
   libraries:
     - name: sap.ui.core
     - name: sap.ui.layout
@@ -16,12 +16,15 @@ builder:
     - name: ui5-task-flatten-library
       afterTask: generateResourcesJson
     - name: deploy-to-abap
-      afterTask: uglify
+      afterTask: generateResourcesJson
       configuration:
         log: 3
+        verbose: false
+        compress: false
         target:
-          url: http://vhcala4hci:50000
-          client: 001
+          url: http://kernich.int:50101
+          destination: EWM
+          client: 100
           auth: basic
         credentials:
           username: env:SAP_USER
@@ -30,4 +33,4 @@ builder:
           name: ZODPU_UI5
           description: "UI5 resources"
           package: ZODPU
-          transport: A4HK900098
+          transport: DEVK901364

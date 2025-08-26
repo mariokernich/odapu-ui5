@@ -1,5 +1,5 @@
 import Filter from "sap/ui/model/Filter";
-import { MetadataAction, MetadataEntity, MetadataFunction } from "../Types";
+import { MetadataAction, MetadataAssociation, MetadataEntity, MetadataFunction, MetadataComplexType } from "../Types";
 import Sorter from "sap/ui/model/Sorter";
 
 /**
@@ -12,12 +12,14 @@ export interface ReadEntityOptions {
 	headers: Record<string, string>;
 	top: number;
 	skip: number;
+	expand?: string[];
 }
 
 export interface GetEntityOptions {
 	entityName: string;
 	keys: Record<string, string | number | boolean>;
 	headers: Record<string, string>;
+	expand?: string[];
 }
 
 export interface CreateEntityOptions {
@@ -35,8 +37,10 @@ export interface DeleteEntityOptions {
 export default interface IODataClient {
 	initAsync(): Promise<void>;
 	getEntities(): MetadataEntity[];
+	getAssociations(): MetadataAssociation[];
 	getFunctions(): MetadataFunction[];
 	getActions(): MetadataAction[];
+	getComplexTypes(): MetadataComplexType[];
 	readEntity(options: ReadEntityOptions): Promise<unknown>;
 	getEntity(options: GetEntityOptions): Promise<unknown>;
 	createEntity(options: CreateEntityOptions): Promise<void>;
@@ -50,7 +54,6 @@ export default interface IODataClient {
 	executeAction(options: {
 		actionName: string,
 		parameters: Record<string, string | number | boolean>,
-		method: 'GET' | 'POST'
 	}): Promise<unknown>;
 	destroy(): void;
 }

@@ -70,6 +70,9 @@ class DialogController extends BaseObject {
         return this.dialog?.getModel(modelName);
     }
 
+    public onInit() {}
+    public onAfterOpen() {}
+
     private async initDialog(options: {
         path: string;
         name: string;

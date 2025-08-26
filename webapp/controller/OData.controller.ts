@@ -1,13 +1,32 @@
-import ODataModel from "sap/ui/model/odata/v2/ODataModel";
-import BaseController from "./BaseController";
-import Dialog from "sap/m/Dialog";
 import Button, { Button$PressEvent } from "sap/m/Button";
-import JSONModel from "sap/ui/model/json/JSONModel";
+import { CheckBox$SelectEvent } from "sap/m/CheckBox";
+import Column from "sap/m/Column";
+import ColumnListItem from "sap/m/ColumnListItem";
+import Dialog from "sap/m/Dialog";
+import HBox from "sap/m/HBox";
+import Input from "sap/m/Input";
 import Label from "sap/m/Label";
+import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
+import { SegmentedButton$SelectionChangeEvent } from "sap/m/SegmentedButton";
+import Table from "sap/m/Table";
+import Text from "sap/m/Text";
+import VBox from "sap/m/VBox";
+import Device from "sap/ui/Device";
+import Control from "sap/ui/core/Control";
+import Core from "sap/ui/core/Core";
+import Icon from "sap/ui/core/Icon";
+import Filter from "sap/ui/model/Filter";
+import Sorter from "sap/ui/model/Sorter";
+import JSONModel from "sap/ui/model/json/JSONModel";
+import Context from "sap/ui/model/odata/v2/Context";
+import ODataModel from "sap/ui/model/odata/v2/ODataModel";
+import { Input$ChangeEvent } from "sap/ui/webc/main/Input";
+import Constants from "../Constants";
 import {
 	FilterRecord,
 	MainViewModel,
+	MetadataAction,
 	MetadataFunction,
 	Project,
 	RequestHeader,
@@ -16,27 +35,12 @@ import {
 	SelectedServiceModel,
 	ServiceEntity,
 } from "../Types";
-import Constants from "../Constants";
-import Input from "sap/m/Input";
-import VBox from "sap/m/VBox";
-import MessageBox from "sap/m/MessageBox";
-import Util from "../util/Util";
-import Device from "sap/ui/Device";
-import Control from "sap/ui/core/Control";
-import OData2Client from "../util/OData2Client";
 import IODataClient from "../util/IODataClient";
+import OData2Client from "../util/OData2Client";
 import OData4Client from "../util/OData4Client";
-import Filter from "sap/ui/model/Filter";
-import Core from "sap/ui/core/Core";
-import Table from "sap/m/Table";
-import Column from "sap/m/Column";
-import Text from "sap/m/Text";
-import ColumnListItem from "sap/m/ColumnListItem";
-import HBox from "sap/m/HBox";
-import Icon from "sap/ui/core/Icon";
-import { Input$ChangeEvent } from "sap/ui/webc/main/Input";
-import Sorter from "sap/ui/model/Sorter";
-import Context from "sap/ui/model/odata/v2/Context";
+import SoundManager from "../util/SoundManager";
+import Util from "../util/Util";
+import BaseController from "./BaseController";
 
 /**
  * @namespace de.kernich.odpu.controller
@@ -52,17 +56,20 @@ export default class OData extends BaseController {
 		resourceType: "entity",
 		selectedEntityName: "",
 		selectedFunctionName: "",
+		selectedActionName: "",
 		response: "",
 		selectedMethod: "GET",
 		selectedServiceFunctions: [],
 		selectedEntityProperties: {
 			properties: [],
 			keyProperties: [],
+			navigationProperties: [],
 		},
+		selectedNavigationProperties: [],
 		entityCount: 0,
 		functionCount: 0,
 		actionCount: 0,
-		top: 10,
+		top: 20,
 		skip: 0,
 		dark: false,
 		statusCode: 0,
@@ -124,6 +131,74 @@ export default class OData extends BaseController {
 		this.getView()?.setModel(new JSONModel([], true), "entitySorting");
 		this.getView()?.setModel(new JSONModel([], true), "requestHistory");
 		this.getView()?.setModel(new JSONModel([], true), "requestHeaders");
+		this.getView()?.setModel(
+			new JSONModel(this.getRecentlyUsedServices(), true),
+			"recentlyUsedServices"
+		);
+	}
+
+	/**
+	 * Get recently used services from localStorage
+	 */
+	private getRecentlyUsedServices(): ServiceEntity[] {
+		try {
+			const stored = localStorage.getItem("odpu_recently_used_services");
+			return stored ? JSON.parse(stored) as ServiceEntity[] : [];
+		} catch (error) {
+			console.error("Error loading recently used services:", error);
+			return [];
+		}
+	}
+
+	/**
+	 * Save service to recently used list
+	 */
+	private saveRecentlyUsedService(service: ServiceEntity): void {
+		try {
+			const recentServices = this.getRecentlyUsedServices();
+
+			// Remove if already exists (to avoid duplicates)
+			const filteredServices = recentServices.filter(
+				(s) =>
+					s.ServicePath !== service.ServicePath ||
+					s.ODataType !== service.ODataType
+			);
+
+			// Add to beginning of array
+			filteredServices.unshift(service);
+
+			// Keep only last 10 items
+			const limitedServices = filteredServices.slice(0, 10);
+
+			// Save to localStorage
+			localStorage.setItem(
+				"odpu_recently_used_services",
+				JSON.stringify(limitedServices)
+			);
+
+			// Update model
+			(
+				this.getView()?.getModel("recentlyUsedServices") as JSONModel
+			).setProperty("/", limitedServices);
+			(this.getView()?.getModel("recentlyUsedServices") as JSONModel).refresh(
+				true
+			);
+		} catch (error) {
+			console.error("Error saving recently used service:", error);
+		}
+	}
+
+	/**
+	 * Handle selection of a recently used service
+	 */
+	onRecentlyUsedServicePress(event: Button$PressEvent) {
+		const service = event
+			.getSource()
+			.getBindingContext("recentlyUsedServices")
+			?.getObject() as ServiceEntity;
+		if (service) {
+			void this.loadService(service);
+		}
 	}
 
 	/**
@@ -149,6 +224,27 @@ export default class OData extends BaseController {
 	 */
 	onSelectService() {
 		void this.handleServiceSelection();
+	}
+
+	/**
+	 * Event handler: Choose service button pressed
+	 */
+	onButtonChooseServicePress() {
+		void this.handleServiceSelection();
+	}
+
+	/**
+	 * Event handler: Change service button pressed
+	 */
+	onButtonChangeServicePress() {
+		void this.handleServiceSelection();
+	}
+
+	/**
+	 * Event handler: Show metadata button pressed
+	 */
+	onButtonShowMetadataPress() {
+		this.onShowMetadata();
 	}
 
 	/**
@@ -190,7 +286,9 @@ export default class OData extends BaseController {
 	 * Event handler: Delete sorter button pressed
 	 */
 	onButtonSortDeletePress(event: Button$PressEvent) {
-		const binding = event.getSource().getBindingContext("entitySorting") as Context;
+		const binding = event
+			.getSource()
+			.getBindingContext("entitySorting") as Context;
 		const obj = binding.getObject() as {
 			property: string;
 			direction: "asc" | "desc";
@@ -220,6 +318,8 @@ export default class OData extends BaseController {
 			}
 		} else if (this.localData.resourceType === "function") {
 			void this.execFunctionRequest();
+		} else if (this.localData.resourceType === "action") {
+			void this.execActionRequest();
 		} else {
 			throw new Error(`Unknown resource type: ${this.localData.resourceType}`);
 		}
@@ -229,9 +329,8 @@ export default class OData extends BaseController {
 	 * Event handler: Show metadata button pressed
 	 */
 	public onShowMetadata() {
-		const xml = this.odataClient?.getMetadataText();
-		if (!xml) return;
-		void this.component.dialogManager.showXmlCodeEditor(xml);
+		if (!this.odataClient) return;
+		void this.component.dialogManager.showXmlCodeEditor(this.odataClient);
 	}
 
 	/**
@@ -292,7 +391,9 @@ export default class OData extends BaseController {
 					this.odataClient = new OData4Client(service.ServicePath);
 					break;
 				default:
-					MessageToast.show(this.component.getText("msg.serviceTypeNotSupported"));
+					MessageToast.show(
+						this.component.getText("msg.serviceTypeNotSupported")
+					);
 					break;
 			}
 
@@ -313,6 +414,8 @@ export default class OData extends BaseController {
 			this.resetSorting();
 			this.resetEntityInputs();
 
+			console.log(this.odataClient?.getAssociations());
+
 			this.selectedService.entities = this.odataClient?.getEntities() || [];
 			this.localData.selectedServiceFunctions =
 				this.odataClient?.getFunctions() || [];
@@ -323,7 +426,8 @@ export default class OData extends BaseController {
 			this.localData.entityCount = this.selectedService.entities?.length || 0;
 			this.localData.functionCount =
 				this.localData.selectedServiceFunctions?.length || 0;
-			this.localData.actionCount = this.localData.selectedServiceActions?.length || 0;
+			this.localData.actionCount =
+				this.localData.selectedServiceActions?.length || 0;
 
 			if (this.selectedService.entities?.length > 0) {
 				this.localData.selectedEntityName =
@@ -341,6 +445,11 @@ export default class OData extends BaseController {
 				this.localData.selectedActionName =
 					this.localData.selectedServiceActions[0].name;
 				this.handleActionChanged();
+			}
+
+			// Save to recently used services if service is not null
+			if (this.selectedService.service) {
+				this.saveRecentlyUsedService(this.selectedService.service);
 			}
 		} finally {
 			this.setBusy(false);
@@ -366,22 +475,26 @@ export default class OData extends BaseController {
 		this.resetFilters();
 		this.resetSorting();
 		this.resetEntityInputs();
-		const properties = this.selectedService.entities.find(
+		const selectedEntity = this.selectedService.entities?.find(
 			(entity) => entity.name === this.localData.selectedEntityName
-		)?.properties;
-		this.localData.selectedEntityProperties.properties = properties || [];
-		this.localData.selectedEntityProperties.keyProperties =
-			this.selectedService.entities.find(
-				(entity) => entity.name === this.localData.selectedEntityName
-			)?.keys || [];
+		);
 
-		this.localData.selectedEntityProperties.properties =
-			this.localData.selectedEntityProperties.properties.filter(
-				(property) =>
-					!this.localData.selectedEntityProperties.keyProperties.some(
-						(keyProperty) => keyProperty.name === property.name
-					)
-			);
+		if (selectedEntity) {
+			this.localData.selectedEntityProperties.properties =
+				selectedEntity.properties || [];
+			this.localData.selectedEntityProperties.keyProperties =
+				selectedEntity.keys || [];
+			this.localData.selectedEntityProperties.navigationProperties =
+				selectedEntity.navigationProperties || [];
+
+			this.localData.selectedEntityProperties.properties =
+				this.localData.selectedEntityProperties.properties.filter(
+					(property) =>
+						!this.localData.selectedEntityProperties.keyProperties.some(
+							(keyProperty) => keyProperty.name === property.name
+						)
+				);
+		}
 	}
 
 	/**
@@ -394,7 +507,7 @@ export default class OData extends BaseController {
 			(func) => func.name === this.localData.selectedFunctionName
 		);
 
-		(this.getView().getModel("selectedFunction") as JSONModel).setProperty(
+		(this.getView()?.getModel("selectedFunction") as JSONModel).setProperty(
 			"/",
 			selectedFunction
 		);
@@ -427,14 +540,22 @@ export default class OData extends BaseController {
 			const properties = this.getEntityPropertyValues();
 			const keyProperties = properties.keyProperties;
 			const allProperties = { ...properties.properties, ...keyProperties };
-			await this.odataClient?.createEntity(
-				{
-					entityName: this.localData.selectedEntityName,
-					properties: allProperties,
-					headers: this.getHeaders(),
-				}
-			);
+			await this.odataClient?.createEntity({
+				entityName: this.localData.selectedEntityName,
+				properties: allProperties,
+				headers: this.getHeaders(),
+			});
 			this.localData.response = "";
+
+			this.addToHistory({
+				method: "CREATE",
+				entity: this.localData.selectedEntityName,
+				statusCode: 201,
+				response: this.localData.response,
+				type: "entity",
+				name: this.localData.selectedEntityName,
+			});
+
 			MessageToast.show(this.component.getText("msg.entityCreated"));
 		} catch (error) {
 			MessageBox.error((error as Error).toString());
@@ -454,21 +575,32 @@ export default class OData extends BaseController {
 			if (
 				Object.values(properties.keyProperties).some((value) => value === "")
 			) {
+				await SoundManager.FireError();
 				MessageBox.error(
-					this.component.getText("msg.enterKeyProperties", [Object.keys(properties.keyProperties).join(", ")])
+					this.component.getText("msg.enterKeyProperties", [
+						Object.keys(properties.keyProperties).join(", "),
+					])
 				);
 				this.setBusy(false);
 				return;
 			}
 
-			await this.odataClient?.deleteEntity(
-				{
-					entityName: this.localData.selectedEntityName,
-					keys: properties.keyProperties,
-					headers: this.getHeaders(),
-				}
-			);
+			await this.odataClient?.deleteEntity({
+				entityName: this.localData.selectedEntityName,
+				keys: properties.keyProperties,
+				headers: this.getHeaders(),
+			});
 			this.localData.response = "";
+
+			this.addToHistory({
+				method: "DELETE",
+				entity: this.localData.selectedEntityName,
+				statusCode: 204,
+				response: this.localData.response,
+				type: "entity",
+				name: this.localData.selectedEntityName,
+			});
+
 			MessageToast.show(this.component.getText("msg.entityDeleted"));
 		} finally {
 			this.setBusy(false);
@@ -490,8 +622,11 @@ export default class OData extends BaseController {
 				const emptyKeyProperties = Object.keys(properties.keyProperties).filter(
 					(key) => properties.keyProperties[key] === ""
 				);
+				await SoundManager.FireError();
 				MessageBox.error(
-					this.component.getText("msg.enterKeyProperties", [emptyKeyProperties.join(", ")])
+					this.component.getText("msg.enterKeyProperties", [
+						emptyKeyProperties.join(", "),
+					])
 				);
 				this.setBusy(false);
 				return;
@@ -501,9 +636,22 @@ export default class OData extends BaseController {
 				entityName: this.localData.selectedEntityName,
 				keys: properties.keyProperties,
 				headers: this.getHeaders(),
+				expand:
+					this.localData.selectedNavigationProperties.length > 0
+						? this.localData.selectedNavigationProperties
+						: undefined,
 			});
 			this.localData.response = JSON.stringify(data, null, 2);
 			this.setTableResponse(data);
+
+			this.addToHistory({
+				method: "GET",
+				entity: this.localData.selectedEntityName,
+				statusCode: 200,
+				response: this.localData.response,
+				type: "entity",
+				name: this.localData.selectedEntityName,
+			});
 		} finally {
 			this.setBusy(false);
 		}
@@ -535,26 +683,22 @@ export default class OData extends BaseController {
 				headers: headers,
 				top: this.localData.top,
 				skip: this.localData.skip,
+				expand:
+					this.localData.selectedNavigationProperties.length > 0
+						? this.localData.selectedNavigationProperties
+						: undefined,
 			});
 			this.localData.response = JSON.stringify(response, null, 2);
 			this.setTableResponse(response);
 
-			const history = (
-				this.getView()?.getModel("requestHistory") as JSONModel
-			).getProperty("/") as RequestHistory[];
-
-			history.push({
+			this.addToHistory({
 				method: "READ",
 				entity: this.localData.selectedEntityName,
-				timestamp: new Date().toISOString(),
 				statusCode: 200,
 				response: this.localData.response,
+				type: "entity",
+				name: this.localData.selectedEntityName,
 			});
-
-			(this.getView()?.getModel("requestHistory") as JSONModel).setProperty(
-				"/",
-				history
-			);
 		} finally {
 			this.setBusy(false);
 		}
@@ -582,12 +726,15 @@ export default class OData extends BaseController {
 		// fill properties with name and isKey flag
 		const keys = Object.keys(propertiesMerged);
 		for (const key of keys) {
-			properties.push({
-				name: propertiesMerged[key].name,
-				isKey: this.localData.selectedEntityProperties.keyProperties.some(
-					(keyProp) => keyProp.name === propertiesMerged[key].name
-				),
-			});
+			const property = propertiesMerged[key as keyof typeof propertiesMerged];
+			if (property && typeof property === 'object' && 'name' in property) {
+				properties.push({
+					name: property.name,
+					isKey: this.localData.selectedEntityProperties.keyProperties.some(
+						(keyProp) => keyProp.name === property.name
+					),
+				});
+			}
 		}
 
 		// Handle different data formats
@@ -608,7 +755,6 @@ export default class OData extends BaseController {
 		}
 
 		// Create columns with calculated widths
-
 		for (const property of properties) {
 			// Calculate header text length
 			const headerText = property.name;
@@ -616,7 +762,8 @@ export default class OData extends BaseController {
 
 			// Find longest value in this column
 			items.forEach((item) => {
-				const value = item[property.name];
+				// Try to find the property value using case-insensitive matching
+				const value = this.findPropertyValue(item, property.name);
 				let displayValue = "";
 				if (value !== null && value !== undefined) {
 					if (typeof value === "object") {
@@ -634,17 +781,20 @@ export default class OData extends BaseController {
 			const columnWidth = maxLength * 10 + 16;
 
 			// Create header with optional key icon
+			const headerItems: Control[] = [];
+			if (property.isKey) {
+				headerItems.push(
+					new Icon({
+						src: "sap-icon://key",
+					}).addStyleClass("sapUiTinyMarginEnd")
+				);
+			}
+			headerItems.push(new Text({ text: headerText }));
+
 			const headerContent = new VBox({
 				items: [
 					new HBox({
-						items: [
-							property.isKey
-								? new Icon({
-										src: "sap-icon://key",
-								  }).addStyleClass("sapUiTinyMarginEnd")
-								: null,
-							new Text({ text: headerText }),
-						].filter(Boolean),
+						items: headerItems,
 						alignItems: "Center",
 					}),
 				],
@@ -660,16 +810,21 @@ export default class OData extends BaseController {
 
 		for (const item of items) {
 			const cells = properties.map((property) => {
-				const value = item[property.name];
-				let displayValue = "";
-				if (value !== null && value !== undefined) {
-					if (typeof value === "object") {
-						displayValue = JSON.stringify(value, null, 2);
-					} else {
-						displayValue = String(value);
+				try {
+					// Try to find the property value using case-insensitive matching
+					const value = this.findPropertyValue(item, property.name);
+					let displayValue = "";
+					if (value !== null && value !== undefined) {
+						if (typeof value === "object") {
+							displayValue = JSON.stringify(value, null, 2);
+						} else {
+							displayValue = String(value);
+						}
 					}
+					return new Text({ text: displayValue });
+				} catch (error) {
+					return new Text();
 				}
-				return new Text({ text: displayValue });
 			});
 
 			table.addItem(
@@ -681,13 +836,36 @@ export default class OData extends BaseController {
 	}
 
 	/**
+	 * Find property value in an object using case-insensitive matching
+	 */
+	private findPropertyValue(item: Record<string, unknown>, propertyName: string): unknown {
+		// First try exact match
+		if (propertyName in item) {
+			return item[propertyName];
+		}
+
+		// Try case-insensitive match
+		const itemKeys = Object.keys(item);
+		const matchingKey = itemKeys.find(key =>
+			key.toLowerCase() === propertyName.toLowerCase()
+		);
+
+		if (matchingKey) {
+			return item[matchingKey];
+		}
+
+		// If no match found, return undefined
+		return undefined;
+	}
+
+	/**
 	 * ODATA: Execute function
 	 */
 	private async execFunctionRequest() {
 		this.setBusy(true);
 		try {
 			const fn = (
-				this.getView().getModel("selectedFunction") as JSONModel
+				this.getView()?.getModel("selectedFunction") as JSONModel
 			).getProperty("/") as MetadataFunction;
 			const parameters = this.getFunctionParameterValues();
 
@@ -698,6 +876,47 @@ export default class OData extends BaseController {
 			});
 
 			this.localData.response = JSON.stringify(response, null, 2);
+
+			this.addToHistory({
+				method: fn.method,
+				entity: fn.name,
+				statusCode: 200,
+				response: this.localData.response,
+				type: "function",
+				name: fn.name,
+			});
+
+			MessageToast.show(this.component.getText("msg.functionExecuted"));
+		} finally {
+			this.setBusy(false);
+		}
+	}
+
+	private async execActionRequest() {
+		this.setBusy(true);
+		try {
+			const action = (
+				this.getView()?.getModel("selectedAction") as JSONModel
+			).getProperty("/") as MetadataAction;
+			const parameters = this.getActionParameterValues();
+
+			const response = await this.odataClient?.executeAction({
+				actionName: action.name,
+				parameters: parameters,
+			});
+
+			this.localData.response = JSON.stringify(response, null, 2);
+
+			this.addToHistory({
+				method: "POST",
+				entity: action.name,
+				statusCode: 200,
+				response: this.localData.response,
+				type: "action",
+				name: action.name,
+			});
+
+			MessageToast.show(this.component.getText("msg.actionExecuted"));
 		} finally {
 			this.setBusy(false);
 		}
@@ -718,7 +937,7 @@ export default class OData extends BaseController {
 	}
 
 	private async handleAddFilter() {
-		const entity = this.selectedService.entities.find(
+		const entity = this.selectedService.entities?.find(
 			(e) => e.name === this.localData.selectedEntityName
 		);
 		if (!entity) {
@@ -729,7 +948,7 @@ export default class OData extends BaseController {
 			entity.properties
 		);
 		const filters = (
-			this.getView().getModel("entityFilters") as JSONModel
+			this.getView()?.getModel("entityFilters") as JSONModel
 		).getProperty("/") as FilterRecord[];
 
 		const conflict = filters.find(
@@ -773,7 +992,9 @@ export default class OData extends BaseController {
 	}
 
 	onEditHeader(event: Button$PressEvent) {
-		const binding = event.getSource().getBindingContext("requestHeaders") as Context;
+		const binding = event
+			.getSource()
+			.getBindingContext("requestHeaders") as Context;
 		const headers = (
 			this.getView()?.getModel("requestHeaders") as JSONModel
 		).getProperty("/") as RequestHeader[];
@@ -820,7 +1041,6 @@ export default class OData extends BaseController {
 			})
 		);
 		dialog.setEndButton(
-			
 			new Button({
 				text: "Cancel",
 				press: () => {
@@ -836,7 +1056,9 @@ export default class OData extends BaseController {
 	}
 
 	onDeleteHeader(event: Button$PressEvent) {
-		const binding = event.getSource().getBindingContext("requestHeaders") as Context;
+		const binding = event
+			.getSource()
+			.getBindingContext("requestHeaders") as Context;
 		const obj = binding.getObject() as { key: string; value: string };
 		const headers = (
 			this.getView()?.getModel("requestHeaders") as JSONModel
@@ -907,6 +1129,12 @@ export default class OData extends BaseController {
 		return parameterInputs;
 	}
 
+	private getActionParameterValues() {
+		const parametersVbox = this.getById("idActionParametersVBox") as VBox;
+		const parameterInputs = Util.getAllInputValues(parametersVbox);
+		return parameterInputs;
+	}
+
 	private getEntityPropertyValues() {
 		const propertiesVbox = this.getById("idPropertiesVBox") as VBox;
 		const keyPropertiesVbox = this.getById("idKeyPropertiesVBox") as VBox;
@@ -920,10 +1148,8 @@ export default class OData extends BaseController {
 	}
 
 	private resetEntityInputs() {
-		const propertiesVbox = this.getById("idPropertiesVBox") as VBox;
-		const keyPropertiesVbox = this.getById("idKeyPropertiesVBox") as VBox;
-		Util.resetInputs(propertiesVbox);
-		Util.resetInputs(keyPropertiesVbox);
+		this.localData.selectedNavigationProperties = [];
+		this.values = {};
 	}
 
 	private resetFunctionInputs() {
@@ -935,7 +1161,9 @@ export default class OData extends BaseController {
 	 * Filter: delete filter configuration
 	 */
 	onButtonFilterDeletePress(event: Button$PressEvent) {
-		const binding = event.getSource().getBindingContext("entityFilters") as Context;
+		const binding = event
+			.getSource()
+			.getBindingContext("entityFilters") as Context;
 		const obj = binding.getObject() as FilterRecord;
 		void this.handleButtonFilterDeletePress(obj);
 	}
@@ -944,7 +1172,9 @@ export default class OData extends BaseController {
 	 * Filter: edit filter configuration
 	 */
 	onButtonFilterEditPress(event: Button$PressEvent) {
-		const binding = event.getSource().getBindingContext("entityFilters") as Context;
+		const binding = event
+			.getSource()
+			.getBindingContext("entityFilters") as Context;
 		const obj = binding.getObject() as FilterRecord;
 		void this.handleButtonFilterEditPress(obj);
 	}
@@ -972,7 +1202,7 @@ export default class OData extends BaseController {
 	 * Filter: edit filter configuration
 	 */
 	private async handleButtonFilterEditPress(obj: FilterRecord) {
-		const entity = this.selectedService.entities.find(
+		const entity = this.selectedService.entities?.find(
 			(e) => e.name === this.localData.selectedEntityName
 		);
 		if (!entity) {
@@ -1005,23 +1235,29 @@ export default class OData extends BaseController {
 		}
 
 		filters[index] = updated;
-		(this.getView().getModel("entityFilters") as JSONModel).setProperty(
+		(this.getView()?.getModel("entityFilters") as JSONModel).setProperty(
 			"/",
 			filters
 		);
 	}
 
 	onButtonViewResponsePress(event: Button$PressEvent) {
-		const binding = event.getSource().getBindingContext("requestHistory") as Context;
+		const binding = event
+			.getSource()
+			.getBindingContext("requestHistory") as Context;
 		const historyItem = binding.getObject() as RequestHistory;
 		this.localData.response = historyItem.response;
+		(this.getView()?.getModel("local") as JSONModel).setProperty(
+			"/dataViewMode",
+			"json"
+		);
 	}
 
 	/**
 	 * Sorter: add sort configuration
 	 */
 	private async handleAddSort() {
-		const entity = this.selectedService.entities.find(
+		const entity = this.selectedService.entities?.find(
 			(e) => e.name === this.localData.selectedEntityName
 		);
 		if (!entity) {
@@ -1093,10 +1329,10 @@ export default class OData extends BaseController {
 
 			const project = {
 				ProjectName: projectName,
-				Odatatype: selectedService.service.ODataType,
-				ServiceName: selectedService.service.ServiceName,
-				ServicePath: selectedService.service.ServicePath,
-				ServiceVersion: selectedService.service.Version,
+				Odatatype: selectedService.service?.ODataType,
+				ServiceName: selectedService.service?.ServiceName,
+				ServicePath: selectedService.service?.ServicePath,
+				ServiceVersion: selectedService.service?.Version,
 				EntityMethod: localData.selectedMethod,
 				EntityName: localData.selectedEntityName,
 				FunctionName: localData.selectedFunctionName,
@@ -1138,17 +1374,13 @@ export default class OData extends BaseController {
 
 				await this.loadService(service);
 
-				localData.resourceType = selectedProject.RequestType;
-				localData.selectedEntityName = selectedProject.EntityName;
-				localData.selectedFunctionName = selectedProject.FunctionName;
+				localData.resourceType = selectedProject.RequestType ?? "";
+				localData.selectedEntityName = selectedProject.EntityName ?? "";
+				localData.selectedFunctionName = selectedProject.FunctionName ?? "";
 				//this.localData.selectedActionName = selectedProject.ActionName;
-				localData.selectedMethod = selectedProject.EntityMethod;
-				localData.top = selectedProject.Top
-					? selectedProject.Top
-					: 10;
-				localData.skip = selectedProject.Skip
-					? selectedProject.Skip
-					: 0;
+				localData.selectedMethod = selectedProject.EntityMethod ?? "";
+				localData.top = selectedProject.Top ? selectedProject.Top : 10;
+				localData.skip = selectedProject.Skip ? selectedProject.Skip : 0;
 
 				(this.getView()?.getModel("local") as JSONModel).setProperty(
 					"/",
@@ -1178,5 +1410,159 @@ export default class OData extends BaseController {
 
 	public setTitle(title: string) {
 		throw new Error("Not implemented: " + title);
+	}
+
+	/**
+	 * Event handler: Recently used service button pressed
+	 */
+	onServicePathButtonPress(event: Button$PressEvent) {
+		const service = event
+			.getSource()
+			.getBindingContext("recentlyUsedServices")
+			?.getObject() as ServiceEntity;
+		if (service) {
+			void this.loadService(service);
+		}
+	}
+
+	/**
+	 * Event handler: Service name button pressed (recently used)
+	 */
+	onServiceNameButtonPress(event: Button$PressEvent) {
+		const service = event
+			.getSource()
+			.getBindingContext("recentlyUsedServices")
+			?.getObject() as ServiceEntity;
+		if (service) {
+			void this.loadService(service);
+		}
+	}
+
+	/**
+	 * Event handler: Delete individual recently used service
+	 */
+	onButtonDeleteRecentlyUsedPress(event: Button$PressEvent) {
+		const service = event
+			.getSource()
+			.getParent()
+			?.getBindingContext("recentlyUsedServices")
+			?.getObject() as ServiceEntity;
+		if (service) {
+			this.deleteRecentlyUsedService(service);
+		}
+	}
+
+	/**
+	 * Delete a specific service from recently used list
+	 */
+	private deleteRecentlyUsedService(serviceToDelete: ServiceEntity): void {
+		try {
+			const recentServices = this.getRecentlyUsedServices();
+			const filteredServices = recentServices.filter(
+				(s) =>
+					s.ServicePath !== serviceToDelete.ServicePath ||
+					s.ODataType !== serviceToDelete.ODataType
+			);
+
+			// Save to localStorage
+			localStorage.setItem(
+				"odpu_recently_used_services",
+				JSON.stringify(filteredServices)
+			);
+
+			// Update model
+			(
+				this.getView()?.getModel("recentlyUsedServices") as JSONModel
+			).setProperty("/", filteredServices);
+		} catch (error) {
+			console.error("Error deleting recently used service:", error);
+		}
+	}
+
+	/**
+	 * Handle navigation property selection change
+	 */
+	onNavigationPropertyChange(event: CheckBox$SelectEvent) {
+		const checkbox = event.getSource();
+		const navigationPropertyName = checkbox
+			.getBindingContext("local")
+			?.getProperty("name");
+		const isSelected = checkbox.getSelected();
+
+		if (isSelected && navigationPropertyName) {
+			if (
+				!this.localData.selectedNavigationProperties.includes(
+					navigationPropertyName
+				)
+			) {
+				this.localData.selectedNavigationProperties.push(
+					navigationPropertyName
+				);
+			}
+		} else if (!isSelected && navigationPropertyName) {
+			const index = this.localData.selectedNavigationProperties.indexOf(
+				navigationPropertyName
+			);
+			if (index > -1) {
+				this.localData.selectedNavigationProperties.splice(index, 1);
+			}
+		}
+	}
+
+	private addToHistory(entry: Omit<RequestHistory, "timestamp">) {
+		const history = (
+			this.getView()?.getModel("requestHistory") as JSONModel
+		).getProperty("/") as RequestHistory[];
+
+		history.push({
+			...entry,
+			timestamp: new Date().toISOString(),
+		});
+
+		(this.getView()?.getModel("requestHistory") as JSONModel).setProperty(
+			"/",
+			history
+		);
+	}
+
+	onCrudMethodSelectionChange(event: SegmentedButton$SelectionChangeEvent) {
+		const selectedMethod = event.getSource().getSelectedKey();
+		switch (selectedMethod) {
+			case "CREATE":
+			case "GETBY":
+			case "DELETE":
+				// TODO get first input of key vbox and set focus to it
+				break;
+		}
+	}
+
+	onButtonClearAllRecentlyUsedPress() {
+		MessageBox.confirm(
+			this.component.getText("msg.confirmClearAllRecentlyUsed"),
+			{
+				onClose: (action: string) => {
+					if (action === MessageBox.Action.OK) {
+						this.clearAllRecentlyUsedServices();
+					}
+				},
+			}
+		);
+	}
+
+	private clearAllRecentlyUsedServices() {
+		try {
+			// Clear from localStorage
+			localStorage.removeItem("odpu_recently_used_services");
+
+			// Update model
+			(
+				this.getView()?.getModel("recentlyUsedServices") as JSONModel
+			).setProperty("/", []);
+
+			MessageToast.show(this.component.getText("msg.servicesRefreshed"));
+		} catch (error) {
+			console.error("Error clearing all recently used services:", error);
+			MessageBox.error("Error clearing recently used services");
+		}
 	}
 }

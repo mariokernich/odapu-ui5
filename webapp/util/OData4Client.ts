@@ -9,10 +9,13 @@ import {
 	MetadataEntity,
 	MetadataFunction,
 	MetadataFunctionMethod,
+	MetadataComplexType,
+	MetadataAssociation,
 } from "../Types";
 import ODataHelper from "./ODataHelper";
 import MessageBox from "sap/m/MessageBox";
 import Sorter from "sap/ui/model/Sorter";
+import SoundManager from "./SoundManager";
 
 /**
  * @namespace de.kernich.odpu.util
@@ -54,6 +57,7 @@ export default class OData4Client implements IODataClient {
 					parameters.error.requestUrl +
 					"\n\nMessage: " +
 					parameters.error.message;
+				void SoundManager.FireError();
 				MessageBox.error(message);
 			}
 		});
@@ -89,6 +93,42 @@ export default class OData4Client implements IODataClient {
 
 		return actions;
 	}
+
+	getComplexTypes(): MetadataComplexType[] {
+		const complexTypes: MetadataComplexType[] = [];
+
+		const complexTypeNodes = Array.from(
+			this.metadataXml.getElementsByTagName("ComplexType")
+		);
+
+		for (const complexTypeNode of complexTypeNodes) {
+			const name = complexTypeNode.getAttribute("Name");
+			if (!name) continue;
+
+			const properties = Array.from(
+				complexTypeNode.getElementsByTagName("Property")
+			).map((propertyNode) => ({
+				name: propertyNode.getAttribute("Name") || "",
+				type: propertyNode.getAttribute("Type") || "",
+				nullable: propertyNode.getAttribute("Nullable") || "",
+				maxLength: ODataHelper.getMaxLength(
+					propertyNode.getAttribute("MaxLength") || ""
+				),
+			}));
+
+			complexTypes.push({
+				name: name,
+				properties: properties,
+			});
+		}
+
+		return complexTypes.filter((entity) => !entity.name.startsWith("SAP__"));
+	}
+
+	getAssociations(): MetadataAssociation[] {
+		return [];
+	}
+
 	destroy(): void {}
 
 	async createEntity(
@@ -105,8 +145,10 @@ export default class OData4Client implements IODataClient {
 		const createdContext = binding.create(options.properties);
 
 		await createdContext.created();
+		
+		await SoundManager.FireSuccess();
 	}
-	deleteEntity(
+	async deleteEntity(
 		options: {
 			entityName: string;
 			keys: Record<string, string | number | boolean>;
@@ -120,13 +162,16 @@ export default class OData4Client implements IODataClient {
 			`/${options.entityName}(${keyPath})`
 		);
 
-		return entityBinding.delete();
+		await entityBinding.delete();
+		
+		await SoundManager.FireSuccess();
 	}
 	async getEntity(
 		options: {
 			entityName: string;
 			keys: Record<string, string | number | boolean>;
 			headers: Record<string, string>;
+			expand?: string[];
 		}
 	): Promise<object> {
 		const keyPath = Object.entries(options.keys)
@@ -137,6 +182,9 @@ export default class OData4Client implements IODataClient {
 		if (obj === undefined) {
 			throw new Error("Entity not found");
 		}
+		
+		await SoundManager.FireSuccess();
+		
 		return obj;
 	}
 	getEntities(): MetadataEntity[] {
@@ -186,11 +234,22 @@ export default class OData4Client implements IODataClient {
 				).maxLength,
 			}));
 
+			// Parse NavigationProperties
+			const navigationProperties = Array.from(
+				entityTypeNode.getElementsByTagName("NavigationProperty")
+			).map((navNode) => ({
+				name: navNode.getAttribute("Name") || "",
+				relationship: navNode.getAttribute("Relationship") || "",
+				fromRole: navNode.getAttribute("FromRole") || "",
+				toRole: navNode.getAttribute("ToRole") || ""
+			}));
+
 			entities.push({
 				name: entity.Name,
 				entityType: entityType,
 				properties: properties,
 				keys: propertyRefs,
+				navigationProperties: navigationProperties
 			});
 		}
 		return entities;
@@ -233,16 +292,26 @@ export default class OData4Client implements IODataClient {
 		headers: Record<string, string>;
 		top: number;
 		skip: number;
+		expand?: string[];
 	}): Promise<object> {
 		const binding = this.model.bindList(
 			"/" + options.entityName,
 			undefined,
-			[],
-			[],
-			{}
+			options.filters,
+			options.sorting,
+			{
+				...(options.expand && options.expand.length > 0 && { $expand: options.expand.join(',') })
+			}
 		);
+
+		// TODO support top and skip
+		
 		const contexts = await binding.requestContexts();
-		return contexts.map((context) => context.getObject() as object);
+		const result = contexts.map((context) => context.getObject() as object);
+		
+		await SoundManager.FireSuccess();
+		
+		return result;
 	}
 	getModel(): ODataModel {
 		return this.model as unknown as ODataModel;
@@ -264,12 +333,13 @@ export default class OData4Client implements IODataClient {
 		method: 'GET' | 'POST'
 	}): Promise<unknown> {
 		throw new Error("Not implemented");
+		// TODO: Implement function execution with SoundManager
+		// await SoundManager.FireSuccess();
 	}
 
 	executeAction(options: {
 		actionName: string,
 		parameters: Record<string, string | number | boolean>,
-		method: 'GET' | 'POST'
 	}): Promise<unknown> {
 		throw new Error("Not implemented");
 	}

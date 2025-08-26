@@ -17,15 +17,32 @@ import { Button$PressEvent } from "sap/m/Button";
 export default class PickServiceDialogController extends DialogController {
 	data = {
 		services: [] as ServiceEntity[],
-		odataTypes: [
-			{ key: "ALL", text: "All" },
-			{ key: "2", text: "2" },
-			{ key: "4", text: "4" },
-		],
+		odataTypes: [] as { key: string; text: string }[],
 		searchQuery: "",
 		selectedODataType: "ALL",
 		selectedService: null as ServiceEntity | null,
 	};
+
+	onInit() {
+		this.data.odataTypes = [
+			{ key: "ALL", text: this.getText("lbl.all") },
+			{ key: "2", text: "2" },
+			{ key: "4", text: "4" },
+		];
+		void this.handleInit();
+	}
+
+	private async handleInit() {
+		this.dialog.setBusy(true);
+		try {
+			const services = await this.requests.getServices();
+			const model = this.getModel("dialog") as JSONModel;
+			model.setProperty("/services", services);
+			this.dialog.setTitle(this.getText("dlg.title.selectService") + ` (${services.length})`);
+		} finally {
+			this.dialog.setBusy(false);
+		}
+	}
 
 	onSearch(event: SearchField$LiveChangeEvent) {
 		const query = event.getParameter("newValue")?.toLowerCase() ?? "";
@@ -45,7 +62,7 @@ export default class PickServiceDialogController extends DialogController {
 		);
 
 		const filteredLength = binding ? binding.getLength() : 0;
-		this.dialog.setTitle(`Select Service (${filteredLength})`);
+		this.dialog.setTitle(this.getText("dlg.title.selectService") + ` (${filteredLength})`);
 	}
 
 	onODataTypeChange(event: Select$ChangeEvent) {
@@ -59,10 +76,15 @@ export default class PickServiceDialogController extends DialogController {
 	}
 
 	async handleRefresh() {
-		const model = this.getModel("dialog") as JSONModel;
-		const services = await this.requests.getServices();
-		model.setProperty("/services", services);
-		MessageToast.show(this.getText("msg.servicesRefreshed"));
+		this.dialog.setBusy(true);
+		try {
+			const model = this.getModel("dialog") as JSONModel;
+			const services = await this.requests.getServices({ refresh: true });
+			model.setProperty("/services", services);
+			MessageToast.show(this.getText("msg.servicesRefreshed"));
+		} finally {
+			this.dialog.setBusy(false);
+		}
 	}
 
 	onChoose() {
@@ -124,7 +146,7 @@ export default class PickServiceDialogController extends DialogController {
 		);
 
 		const filteredLength = binding ? binding.getLength() : 0;
-		this.dialog.setTitle(`Select Service (${filteredLength})`);
+		this.dialog.setTitle(this.getText("dlg.title.selectService") + ` (${filteredLength})`);
 	}
 
 	onFavorite(isFavorite: boolean, event: Button$PressEvent) {
