@@ -1,10 +1,28 @@
-import ODataModel from "sap/ui/model/odata/v2/ODataModel";
-import BaseController from "./BaseController";
-import Dialog from "sap/m/Dialog";
 import Button, { Button$PressEvent } from "sap/m/Button";
-import JSONModel from "sap/ui/model/json/JSONModel";
+import { CheckBox$SelectEvent } from "sap/m/CheckBox";
+import Column from "sap/m/Column";
+import ColumnListItem from "sap/m/ColumnListItem";
+import Dialog from "sap/m/Dialog";
+import HBox from "sap/m/HBox";
+import Input from "sap/m/Input";
 import Label from "sap/m/Label";
+import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
+import { SegmentedButton$SelectionChangeEvent } from "sap/m/SegmentedButton";
+import Table from "sap/m/Table";
+import Text from "sap/m/Text";
+import VBox from "sap/m/VBox";
+import Device from "sap/ui/Device";
+import Control from "sap/ui/core/Control";
+import Core from "sap/ui/core/Core";
+import Icon from "sap/ui/core/Icon";
+import Filter from "sap/ui/model/Filter";
+import Sorter from "sap/ui/model/Sorter";
+import JSONModel from "sap/ui/model/json/JSONModel";
+import Context from "sap/ui/model/odata/v2/Context";
+import ODataModel from "sap/ui/model/odata/v2/ODataModel";
+import { Input$ChangeEvent } from "sap/ui/webc/main/Input";
+import Constants from "../Constants";
 import {
 	FilterRecord,
 	MainViewModel,
@@ -17,30 +35,12 @@ import {
 	SelectedServiceModel,
 	ServiceEntity,
 } from "../Types";
-import Constants from "../Constants";
-import Input from "sap/m/Input";
-import VBox from "sap/m/VBox";
-import MessageBox from "sap/m/MessageBox";
-import Util from "../util/Util";
-import Device from "sap/ui/Device";
-import Control from "sap/ui/core/Control";
-import OData2Client from "../util/OData2Client";
 import IODataClient from "../util/IODataClient";
+import OData2Client from "../util/OData2Client";
 import OData4Client from "../util/OData4Client";
-import Filter from "sap/ui/model/Filter";
-import Core from "sap/ui/core/Core";
-import Table from "sap/m/Table";
-import Column from "sap/m/Column";
-import Text from "sap/m/Text";
-import ColumnListItem from "sap/m/ColumnListItem";
-import HBox from "sap/m/HBox";
-import Icon from "sap/ui/core/Icon";
-import { Input$ChangeEvent } from "sap/ui/webc/main/Input";
-import Sorter from "sap/ui/model/Sorter";
-import Context from "sap/ui/model/odata/v2/Context";
-import { CheckBox$SelectEvent } from "sap/m/CheckBox";
 import SoundManager from "../util/SoundManager";
-import { SegmentedButton$SelectionChangeEvent } from "sap/m/SegmentedButton";
+import Util from "../util/Util";
+import BaseController from "./BaseController";
 
 /**
  * @namespace de.kernich.odpu.controller
@@ -143,7 +143,7 @@ export default class OData extends BaseController {
 	private getRecentlyUsedServices(): ServiceEntity[] {
 		try {
 			const stored = localStorage.getItem("odpu_recently_used_services");
-			return stored ? JSON.parse(stored) : [];
+			return stored ? JSON.parse(stored) as ServiceEntity[] : [];
 		} catch (error) {
 			console.error("Error loading recently used services:", error);
 			return [];
@@ -726,12 +726,15 @@ export default class OData extends BaseController {
 		// fill properties with name and isKey flag
 		const keys = Object.keys(propertiesMerged);
 		for (const key of keys) {
-			properties.push({
-				name: propertiesMerged[key].name,
-				isKey: this.localData.selectedEntityProperties.keyProperties.some(
-					(keyProp) => keyProp.name === propertiesMerged[key].name
-				),
-			});
+			const property = propertiesMerged[key as keyof typeof propertiesMerged];
+			if (property && typeof property === 'object' && 'name' in property) {
+				properties.push({
+					name: property.name,
+					isKey: this.localData.selectedEntityProperties.keyProperties.some(
+						(keyProp) => keyProp.name === property.name
+					),
+				});
+			}
 		}
 
 		// Handle different data formats
@@ -752,7 +755,6 @@ export default class OData extends BaseController {
 		}
 
 		// Create columns with calculated widths
-
 		for (const property of properties) {
 			// Calculate header text length
 			const headerText = property.name;
@@ -760,7 +762,8 @@ export default class OData extends BaseController {
 
 			// Find longest value in this column
 			items.forEach((item) => {
-				const value = item[property.name];
+				// Try to find the property value using case-insensitive matching
+				const value = this.findPropertyValue(item, property.name);
 				let displayValue = "";
 				if (value !== null && value !== undefined) {
 					if (typeof value === "object") {
@@ -778,17 +781,20 @@ export default class OData extends BaseController {
 			const columnWidth = maxLength * 10 + 16;
 
 			// Create header with optional key icon
+			const headerItems: Control[] = [];
+			if (property.isKey) {
+				headerItems.push(
+					new Icon({
+						src: "sap-icon://key",
+					}).addStyleClass("sapUiTinyMarginEnd")
+				);
+			}
+			headerItems.push(new Text({ text: headerText }));
+
 			const headerContent = new VBox({
 				items: [
 					new HBox({
-						items: [
-							property.isKey
-								? new Icon({
-										src: "sap-icon://key",
-								  }).addStyleClass("sapUiTinyMarginEnd")
-								: null,
-							new Text({ text: headerText }),
-						].filter(Boolean),
+						items: headerItems,
 						alignItems: "Center",
 					}),
 				],
@@ -804,7 +810,8 @@ export default class OData extends BaseController {
 
 		for (const item of items) {
 			const cells = properties.map((property) => {
-				const value = item[property.name];
+				// Try to find the property value using case-insensitive matching
+				const value = this.findPropertyValue(item, property.name);
 				let displayValue = "";
 				if (value !== null && value !== undefined) {
 					if (typeof value === "object") {
@@ -822,6 +829,29 @@ export default class OData extends BaseController {
 				})
 			);
 		}
+	}
+
+	/**
+	 * Find property value in an object using case-insensitive matching
+	 */
+	private findPropertyValue(item: Record<string, unknown>, propertyName: string): unknown {
+		// First try exact match
+		if (propertyName in item) {
+			return item[propertyName];
+		}
+
+		// Try case-insensitive match
+		const itemKeys = Object.keys(item);
+		const matchingKey = itemKeys.find(key =>
+			key.toLowerCase() === propertyName.toLowerCase()
+		);
+
+		if (matchingKey) {
+			return item[matchingKey];
+		}
+
+		// If no match found, return undefined
+		return undefined;
 	}
 
 	/**

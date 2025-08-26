@@ -1,13 +1,13 @@
+import ResourceBundle from "sap/base/i18n/ResourceBundle";
+import MessageBox from "sap/m/MessageBox";
 import UIComponent from "sap/ui/core/UIComponent";
-import DialogManager from "./util/DialogManager";
-import ODataModel from "sap/ui/model/odata/v2/ODataModel";
-import ODataRequests from "./util/ODataRequests";
 import Device from "sap/ui/Device";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import { Model$RequestFailedEvent } from "sap/ui/model/Model";
-import MessageBox from "sap/m/MessageBox";
+import ODataModel from "sap/ui/model/odata/v2/ODataModel";
 import ResourceModel from "sap/ui/model/resource/ResourceModel";
-import ResourceBundle from "sap/base/i18n/ResourceBundle";
+import DialogManager from "./util/DialogManager";
+import ODataRequests from "./util/ODataRequests";
 import SoundManager from "./util/SoundManager";
 
 /**

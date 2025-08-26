@@ -1,39 +1,39 @@
 import Dialog from "sap/m/Dialog";
-import {
-	PushChannelEntity,
-	FilterRecord,
-	MetadataEntityProperty,
-	Project,
-	ServiceEntity,
-	InfoEntity,
-	MetadataEntity,
-	MetadataFunction,
-	MetadataAction,
-	MetadataComplexType,
-} from "../Types";
+import MessageToast from "sap/m/MessageToast";
 import ManagedObject from "sap/ui/base/ManagedObject";
 import JSONModel from "sap/ui/model/json/JSONModel";
-import Util from "./Util";
-import Component from "../Component";
-import ODataRequests from "./ODataRequests";
 import ODataModel from "sap/ui/model/odata/v2/ODataModel";
-import DialogController from "./DialogController";
-import SelectProjectDialogController from "../controller/dialog/SelectProjectDialogController";
-import AboutDialogController from "../controller/dialog/AboutDialogController";
 import ResourceModel from "sap/ui/model/resource/ResourceModel";
-import SaveProjectDialogController from "../controller/dialog/SaveProjectDialogController";
-import ProjectListDialogController from "../controller/dialog/ProjectListDialogController";
-import ConfirmationDialogController from "../controller/dialog/ConfirmationDialogController";
-import UpdateAvailableDialogController from "../controller/dialog/UpdateAvailableDialogController";
-import AddSortDialogController from "../controller/dialog/AddSortDialogController";
+import Component from "../Component";
+import AboutDialogController from "../controller/dialog/AboutDialogController";
 import AddFilterDialogController from "../controller/dialog/AddFilterDialogController";
 import AddHeaderDialogController from "../controller/dialog/AddHeaderDialogController";
-import PickCustomServiceDialogController from "../controller/dialog/PickCustomServiceDialogController";
+import AddSortDialogController from "../controller/dialog/AddSortDialogController";
+import ConfirmationDialogController from "../controller/dialog/ConfirmationDialogController";
 import EditFilterDialogController from "../controller/dialog/EditFilterDialogController";
 import PickApcDialogController from "../controller/dialog/PickApcDialogController";
+import PickCustomServiceDialogController from "../controller/dialog/PickCustomServiceDialogController";
 import PickServiceDialogController from "../controller/dialog/PickServiceDialogController";
+import ProjectListDialogController from "../controller/dialog/ProjectListDialogController";
+import SaveProjectDialogController from "../controller/dialog/SaveProjectDialogController";
+import SelectProjectDialogController from "../controller/dialog/SelectProjectDialogController";
+import UpdateAvailableDialogController from "../controller/dialog/UpdateAvailableDialogController";
+import {
+	FilterRecord,
+	InfoEntity,
+	MetadataAction,
+	MetadataComplexType,
+	MetadataEntity,
+	MetadataEntityProperty,
+	MetadataFunction,
+	Project,
+	PushChannelEntity,
+	ServiceEntity,
+} from "../Types";
+import DialogController from "./DialogController";
 import IODataClient from "./IODataClient";
-import MessageToast from "sap/m/MessageToast";
+import ODataRequests from "./ODataRequests";
+import Util from "./Util";
 
 type DialogManagerEntry<TController extends DialogController> = {
 	dialog: Dialog;
@@ -298,14 +298,14 @@ export default class DialogManager extends ManagedObject {
 					actions: MetadataAction[];
 					complexTypes: MetadataComplexType[];
 				} = {
-					xml: "",
-					viewMode: "xml",
-					odataClient: client,
-					entities: [],
-					functions: [],
-					actions: [],
-					complexTypes: []
-				};
+						xml: "",
+						viewMode: "xml",
+						odataClient: client,
+						entities: [],
+						functions: [],
+						actions: [],
+						complexTypes: []
+					};
 				public onInit(): void {
 					this.data.xml = Util.formatXml(client.getMetadataText());
 					this.data.entities = client.getEntities() || [];
@@ -399,6 +399,10 @@ export default class DialogManager extends ManagedObject {
 		controller.dialog.attachAfterOpen(() => {
 			controller.onAfterOpen();
 		})
+
+		controller.dialog.setEscapeHandler(() => {
+			controller.onCancel();
+		});
 
 		controller.onInit();
 

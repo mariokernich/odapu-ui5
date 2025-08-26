@@ -4,7 +4,7 @@ metadata:
 type: application
 framework:
   name: SAPUI5
-  version: "1.108.42"
+  version: "1.108.44"
   libraries:
     - name: sap.m
     - name: sap.f
@@ -34,7 +34,7 @@ server:
       afterMiddleware: compression
       mountPath: /sap/opu/
       configuration:
-        baseUri: "https://a4h.kernich.de/sap/opu/"
+        baseUri: "http://kernich.int:50101/sap/opu/"
         strictSSL: false
         query:
           sap-client: '001'
@@ -44,7 +44,7 @@ server:
       afterMiddleware: compression
       mountPath: /sap/bc/apc/
       configuration:
-        baseUri: "https://a4h.kernich.de/sap/bc/apc/"
+        baseUri: "http://kernich.int:50101/sap/bc/apc/"
         strictSSL: false
         query:
           sap-client: '001'
